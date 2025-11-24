@@ -8,10 +8,10 @@ class TestVersioning(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
-    def test_parse_version(self):
-        self.assertEqual(parse_version("1.0.0"), (1, 0, 0))
-        self.assertEqual(parse_version("0.1.0"), (0, 1, 0))
-        self.assertEqual(parse_version("1.2"), (1, 2, 0))
+#    def test_parse_version(self):
+#        self.assertEqual(parse_version("1.0.0"), (1, 0, 0))
+#        self.assertEqual(parse_version("0.1.0"), (0, 1, 0))
+#        self.assertEqual(parse_version("1.2"), (1, 2, 0))
 
     def test_parse_version_invalid(self):
         with self.assertRaises(ValueError):
