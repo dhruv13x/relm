@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from repo_manager.core import find_projects
+from relm.core import find_projects
 
 class TestCore(unittest.TestCase):
     def test_find_projects(self):
@@ -8,10 +8,10 @@ class TestCore(unittest.TestCase):
         root = Path(".")
         projects = find_projects(root)
         
-        # Should find at least repo_manager itself
+        # Should find at least relm itself
         names = [p.name for p in projects]
         
-        self.assertIn("repo_manager", names)
+        self.assertIn("relm", names)
         self.assertTrue(len(projects) > 1)
 
 if __name__ == "__main__":

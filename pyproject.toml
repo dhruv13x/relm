@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "repo_manager"
+name = "relm"
 version = "0.1.0"
 description = "A unified CLI tool to manage versioning, git, and PyPI releases for multiple projects."
 readme = "README.md"
@@ -41,12 +41,12 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dhruv13x/repo_manager"
-Source   = "https://github.com/dhruv13x/repo_manager"
-Issues   = "https://github.com/dhruv13x/repo_manager/issues"
+Homepage = "https://github.com/dhruv13x/relm"
+Source   = "https://github.com/dhruv13x/relm"
+Issues   = "https://github.com/dhruv13x/relm/issues"
 
 [project.scripts]
-repo-manager = "repo_manager.main:main"
+relm = "relm.main:main"
 
 [project.optional-dependencies]
 dev = [
@@ -109,7 +109,7 @@ addopts = [
   "--durations=10",
 
   # Coverage: target the real package
-  "--cov=src/repo_manager",
+  "--cov=src/relm",
   "--cov-report=term-missing:skip-covered",
   "--cov-report=html",
   "--cov-report=xml",
@@ -121,7 +121,7 @@ log_cli_level = "INFO"
 
 [tool.coverage.run]
 branch = true
-source = ["src/repo_manager"]
+source = ["src/relm"]
 
 [tool.coverage.report]
 fail_under = 85

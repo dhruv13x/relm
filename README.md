@@ -18,5 +18,5 @@ pip install -e .
 ## Usage
 
 ```bash
-repo-manager --help
+relm --help
 ```

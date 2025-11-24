@@ -1,5 +1,5 @@
 import unittest
-from repo_manager.versioning import bump_version_string
+from relm.versioning import bump_version_string
 
 class TestVersioning(unittest.TestCase):
     def test_bump_patch(self):
