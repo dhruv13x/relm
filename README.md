@@ -103,13 +103,6 @@ src/relm/
 4. **`versioning.py`**: Bumps the version number in `pyproject.toml` and `__init__.py`.
 5. **`git_ops.py`**: Handles staging, committing, and pushing changes to the remote Git repository.
 
-## 🗺️ Roadmap
-
-- [x] Initial release
-- [ ] Add support for custom commit messages
-- [ ] Add support for pre-release versions (e.g., `alpha`, `beta`, `rc`)
-- [ ] Add a `changelog` command to generate a changelog from commit history
-
 ## 🤝 Contributing & License
 
 Contributions are welcome! Please feel free to submit a pull request or open an issue.
