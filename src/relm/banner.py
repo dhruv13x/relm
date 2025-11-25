@@ -48,19 +48,6 @@ def print_logo():
                                          
 """.strip().split("\n")
 
-    # helper math functions (unchanged)
-    def lerp(a, b, t):
-        return a + (b - a) * t
-
-    def blend(c1, c2, t):
-        # Gemini gamma + wave shaping (unchanged)
-        t = t ** 1.47
-        t = 0.82 * t + 0.08 * math.sin(3.2 * t)
-        r = int(lerp(c1[0], c2[0], t))
-        g = int(lerp(c1[1], c2[1], t))
-        b = int(lerp(c1[2], c2[2], t))
-        return f"#{r:02x}{g:02x}{b:02x}"
-
     # --- fixed palettes fallback (keeps your original palettes available) ---
     fixed_palettes = [
         [

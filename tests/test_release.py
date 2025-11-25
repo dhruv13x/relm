@@ -263,5 +263,38 @@ class TestRelease(unittest.TestCase):
         self.assertFalse(result)
         mock_console.print.assert_any_call("[red]Push error: Push failed[/red]")
 
+    @patch("pathlib.Path.exists")
+    @patch("relm.release.git_fetch_tags")
+    @patch("relm.release.git_tag_exists")
+    @patch("relm.release.is_git_clean")
+    @patch("relm.release.bump_version_string")
+    @patch("relm.release.update_file_content")
+    @patch("relm.release.update_version_tests")
+    @patch("relm.release.run_tests")
+    @patch("relm.release.git_add")
+    @patch("relm.release.git_commit")
+    @patch("relm.release.git_tag")
+    @patch("relm.release.git_push")
+    @patch("relm.release.console")
+    def test_perform_release_init_in_project_root(self, mock_console, mock_push, mock_tag, mock_commit, mock_add,
+                                                  mock_run_tests, mock_update_tests, mock_update_file, mock_bump,
+                                                  mock_is_clean, mock_tag_exists, mock_fetch, mock_path_exists):
+        mock_is_clean.return_value = True
+        mock_tag_exists.side_effect = [True, False]
+        mock_bump.return_value = "1.0.1"
+        mock_update_file.return_value = True
+        mock_update_tests.return_value = []
+        mock_run_tests.return_value = True
+        # Simulate that __init__.py is in the project root, not src
+        mock_path_exists.side_effect = [False, True]
+
+        result = perform_release(self.project, "patch", yes_mode=True)
+        self.assertTrue(result)
+
+        # Check that update_file_content was called for the correct __init__.py path
+        init_path = self.project.path / "test_project/__init__.py"
+        mock_update_file.assert_any_call(init_path, "1.0.0", "1.0.1")
+
+
 if __name__ == "__main__":
     unittest.main()

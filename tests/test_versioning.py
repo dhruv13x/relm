@@ -122,5 +122,21 @@ class TestVersioning(TestCase):
         updated = update_version_tests(project_path, "1.0.0", "1.1.0")
         self.assertEqual(len(updated), 0)
 
+    @patch("pathlib.Path.read_text")
+    def test_update_version_tests_read_error(self, mock_read_text):
+        """
+        Tests that update_version_tests handles exceptions during file reads.
+        """
+        project_path = Path("/project")
+        self.fs.create_dir(project_path / "tests")
+        self.fs.create_file(project_path / "tests" / "test_v.py", contents='version = "1.0.0"')
+
+        mock_read_text.side_effect = Exception("Read error")
+
+        # The function should swallow the exception and continue
+        updated_files = update_version_tests(project_path, "1.0.0", "1.1.0")
+        self.assertEqual(len(updated_files), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

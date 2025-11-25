@@ -3,11 +3,34 @@
 import unittest
 from pathlib import Path
 from pyfakefs.fake_filesystem_unittest import TestCase
-from relm.core import find_projects
+from relm.core import Project, find_projects, load_project
+
 
 class TestCore(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
+
+    def test_project_str(self):
+        """
+        Tests the __str__ representation of the Project class.
+        """
+        project = Project(name="test-project", version="1.0", path=Path("/path/to/project"))
+        self.assertIn("test-project", str(project))
+        self.assertIn("1.0", str(project))
+
+    def test_load_project_invalid_toml(self):
+        """
+        Tests that load_project returns None for an invalid TOML file.
+        """
+        self.fs.create_file("invalid/pyproject.toml", contents="invalid toml")
+        self.assertIsNone(load_project(Path("invalid")))
+
+    def test_find_projects_non_existent_path(self):
+        """
+        Tests that find_projects returns an empty list for a non-existent path.
+        """
+        projects = find_projects(Path("non-existent"))
+        self.assertEqual(len(projects), 0)
 
     def test_find_projects(self):
         # Create a mock file system with multiple projects
