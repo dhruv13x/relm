@@ -1,3 +1,5 @@
+# src/relm/main.py
+
 import argparse
 import sys
 from pathlib import Path
@@ -6,6 +8,7 @@ from rich.panel import Panel
 from rich.table import Table
 from .core import find_projects
 from .release import perform_release
+from .banner import print_logo
 
 console = Console()
 
@@ -32,6 +35,7 @@ def list_projects(path: Path):
     console.print(table)
 
 def main():
+    print_logo()
     parser = argparse.ArgumentParser(
         description="Manage releases and versioning for local Python projects."
     )
