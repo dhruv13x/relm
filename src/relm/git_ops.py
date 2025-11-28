@@ -85,3 +85,12 @@ def git_has_changes(path: Path, tag_name: str) -> bool:
         return False # Exit code 0 means NO differences
     except subprocess.CalledProcessError:
         return True # Exit code 1 means differences exist (or error, but usually diffs)
+
+def get_current_branch(path: Path) -> str:
+    """
+    Returns the name of the current git branch.
+    """
+    try:
+        return run_git_command(["rev-parse", "--abbrev-ref", "HEAD"], cwd=path)
+    except subprocess.CalledProcessError:
+        return "unknown"
