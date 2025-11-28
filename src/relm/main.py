@@ -10,6 +10,7 @@ from .core import find_projects
 from .release import perform_release
 from .install import install_project
 from .git_ops import is_git_clean, get_current_branch
+from .runner import run_project_command
 from .banner import print_logo
 
 console = Console()
@@ -62,6 +63,12 @@ def main():
     install_parser = subparsers.add_parser("install", help="Install projects into the current environment")
     install_parser.add_argument("project_name", help="Name of the project to install or 'all'")
     install_parser.add_argument("--no-editable", action="store_true", help="Install in standard mode instead of editable")
+
+    # Run command
+    run_parser = subparsers.add_parser("run", help="Run a shell command across projects")
+    run_parser.add_argument("command_string", help="The shell command to execute")
+    run_parser.add_argument("project_name", nargs="?", default="all", help="Name of the project to run on or 'all'")
+    run_parser.add_argument("--fail-fast", action="store_true", help="Stop execution if a command fails")
 
     # Status command
     status_parser = subparsers.add_parser("status", help="Check git status of projects")
@@ -148,6 +155,40 @@ def main():
             console.print(f"[green]Installed: {len(results['installed'])}[/green] {results['installed']}")
             if results["failed"]:
                 console.print(f"[red]Failed:    {len(results['failed'])}[/red] {results['failed']}")
+
+    elif args.command == "run":
+        all_projects = find_projects(root_path)
+        target_projects = []
+
+        if args.project_name == "all":
+            target_projects = all_projects
+            console.print(f"[bold]Running command '{args.command_string}' on {len(target_projects)} projects...[/bold]")
+        else:
+            target = next((p for p in all_projects if p.name == args.project_name), None)
+            if not target:
+                console.print(f"[red]Project '{args.project_name}' not found in {root_path}[/red]")
+                sys.exit(1)
+            target_projects = [target]
+
+        results = {"success": [], "failed": []}
+
+        for project in target_projects:
+            console.rule(f"Running on {project.name}")
+            success = run_project_command(project.path, args.command_string)
+            if success:
+                results["success"].append(project.name)
+            else:
+                results["failed"].append(project.name)
+                if args.fail_fast:
+                    console.print(f"[red]Fail-fast enabled. Stopping execution.[/red]")
+                    break
+        
+        console.rule("Execution Summary")
+        if results["success"]:
+            console.print(f"[green]Success: {len(results['success'])}[/green] {results['success']}")
+        if results["failed"]:
+            console.print(f"[red]Failed:  {len(results['failed'])}[/red] {results['failed']}")
+            sys.exit(1)
 
     elif args.command == "status":
         all_projects = find_projects(root_path)

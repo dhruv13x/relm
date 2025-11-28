@@ -117,5 +117,51 @@ class TestMain(unittest.TestCase):
 
         mock_console.print.assert_any_call("[red]Critical error releasing proj1: Boom[/red]")
 
+    @patch("argparse.ArgumentParser.parse_args")
+    @patch("relm.main.find_projects")
+    @patch("relm.main.run_project_command")
+    @patch("relm.main.console")
+    def test_main_run_all(self, mock_console, mock_run_cmd, mock_find_projects, mock_parse_args):
+        mock_parse_args.return_value = MagicMock(
+            command="run",
+            path=".",
+            command_string="echo test",
+            project_name="all",
+            fail_fast=False
+        )
+        p1 = Project("proj1", "1.0.0", Path("."), "desc")
+        p2 = Project("proj2", "1.0.0", Path("."), "desc")
+        mock_find_projects.return_value = [p1, p2]
+        mock_run_cmd.side_effect = [True, False]
+
+        with self.assertRaises(SystemExit):
+            # Because one failed, it exits with 1 at the end
+            main()
+
+        self.assertEqual(mock_run_cmd.call_count, 2)
+        mock_console.rule.assert_called_with("Execution Summary")
+
+    @patch("argparse.ArgumentParser.parse_args")
+    @patch("relm.main.find_projects")
+    @patch("relm.main.run_project_command")
+    @patch("relm.main.console")
+    def test_main_run_fail_fast(self, mock_console, mock_run_cmd, mock_find_projects, mock_parse_args):
+        mock_parse_args.return_value = MagicMock(
+            command="run",
+            path=".",
+            command_string="echo test",
+            project_name="all",
+            fail_fast=True
+        )
+        p1 = Project("proj1", "1.0.0", Path("."), "desc")
+        p2 = Project("proj2", "1.0.0", Path("."), "desc")
+        mock_find_projects.return_value = [p1, p2]
+        mock_run_cmd.side_effect = [False, True] # First fails
+
+        with self.assertRaises(SystemExit):
+            main()
+
+        self.assertEqual(mock_run_cmd.call_count, 1)
+
 if __name__ == "__main__":
     unittest.main()
