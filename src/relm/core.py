@@ -63,9 +63,22 @@ def find_projects(root_path: Path) -> List[Project]:
     if root_project:
         projects.append(root_project)
 
+    # Safety: Cap the number of directories we scan to prevent hanging on massive folders
+    # or accidental runs in root.
+    MAX_SCANNED_DIRS = 100
+    scanned_count = 0
+
     # Check subdirectories
     for item in root_path.iterdir():
+        if scanned_count > MAX_SCANNED_DIRS:
+            # We can't easily print from here without a console reference, 
+            # but we can stop scanning to prevent a crash/hang.
+            # In a future update, we could pass a warning back.
+            break
+
         if item.is_dir() and item != root_path:
+            scanned_count += 1
+            
             # Avoid recursing too deep or checking hidden dirs for now
             if item.name.startswith("."):
                 continue

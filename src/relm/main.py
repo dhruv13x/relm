@@ -77,6 +77,19 @@ def main():
     args = parser.parse_args()
     root_path = Path(args.path).resolve()
 
+    # Safety check for root directory
+    if root_path == Path(root_path.anchor):
+        console.print(f"[bold red]⚠️  Safety Warning: You are running relm in the system root ({root_path}).[/bold red]")
+        console.print("[red]This is highly discouraged and may cause performance issues or unintended side effects.[/red]")
+        
+        # Check if we can skip confirmation (only valid for commands that support -y)
+        auto_yes = getattr(args, "yes", False)
+        
+        if not auto_yes:
+             response = console.input("[yellow]Are you sure you want to continue? (y/N): [/yellow]")
+             if response.lower() != "y":
+                 sys.exit(1)
+
     if args.command == "list":
         list_projects(root_path)
     
