@@ -16,130 +16,155 @@
 [![Test Coverage](https://img.shields.io/badge/coverage-90%25%2B-brightgreen.svg)](https://github.com/dhruv13x/relm/actions/workflows/test.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/badge/linting-ruff-yellow.svg)](https://github.com/astral-sh/ruff)
-![Security](https://img.shields.io/badge/security-CodeQL-blue.svg)
 
 <!-- Usage -->
 ![Downloads](https://img.shields.io/pypi/dm/relm.svg)
-[![PyPI Downloads](https://img.shields.io/pypi/dm/relm.svg)](https://pypistats.org/packages/relm)
-![OS](https://img.shields.io/badge/os-Linux%20%7C%20macOS%20%7C%20Windows-blue.svg)
-[![Python Versions](https://img.shields.io/pypi/pyversions/relm.svg)](https://pypi.org/project/relm/)
-
-<!-- License -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-<!-- Docs -->
-[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://your-docs-link)
 
 </div>
 
-
 # relm
 
-A unified CLI tool to manage versioning, git, and PyPI releases for multiple projects.
-
-[![PyPI Version](https://img.shields.io/pypi/v/relm)](https://pypi.org/project/relm/)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/dhruv13x/relm/ci.yml)](https://github.com/dhruv13x/relm/actions)
-[![License](https://img.shields.io/pypi/l/relm)](https://github.com/dhruv13x/relm/blob/main/LICENSE)
-[![Python Version](https://img.shields.io/pypi/pyversions/relm)](https://pypi.org/project/relm/)
-
-## About
-
-`relm` is a command-line tool designed to streamline the release process for Python projects. It automates version bumping, git tagging, and uploading to PyPI, making it ideal for managing multiple libraries or microservices from a single repository.
+**The "Batteries Included" CLI for managing your Python mono-repo or multi-project workspace.**
+Automate versioning, git tagging, PyPI releases, and local environment setup with a single tool.
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8+
+*   **Python 3.8+**
+*   `pip` or `pipx`
 
 ### Installation
-For a clean, isolated installation, use `pipx`:
+Install globally with `pipx` (recommended):
 ```bash
 pipx install relm
 ```
-Alternatively, you can use `pip`:
+Or with `pip`:
 ```bash
 pip install relm
 ```
 
 ### Usage Example
-1. **Navigate to your repository** containing one or more Python projects.
-2. **List all discoverable projects**:
-   ```bash
-   relm list
-   ```
-3. **Release a new version of a specific project**:
-   ```bash
-   # Bump the patch version (e.g., 0.1.0 -> 0.1.1)
-   relm release my-project-name patch
+Manage your projects from the root of your workspace:
 
-   # Bump the minor version (e.g., 0.1.1 -> 0.2.0)
-   relm release my-project-name minor
-   ```
-> **Note**: The `project_name` must match the `name` field in the project's `pyproject.toml`.
+```bash
+# 1. Discover all projects in the current directory
+relm list
+
+# 2. Bulk install all projects in editable mode (Developer Mode)
+relm install all
+
+# 3. Check git status across all projects
+relm status all
+
+# 4. Run a command across all projects (e.g., tests)
+relm run "pytest" all --fail-fast
+
+# 5. Release a patch version for a specific project
+relm release my-lib patch
+```
+
+> **Note**: `relm` works by finding `pyproject.toml` files. Ensure your projects are standard Python packages.
+
+---
 
 ## ✨ Key Features
 
-- **Automated Project Discovery**: Scans directories to find all valid Python projects with a `pyproject.toml`.
-- **Smart Version Bumping**: Increments semantic versions (`major`, `minor`, `patch`) in your project files.
-- **Git Integration**: Automatically stages, commits, and pushes release changes to your remote repository.
-- **PyPI Publishing**: Builds your project and uploads the distributable to PyPI.
-- **Bulk Release Mode**: **Release all discovered projects at once with a single command.**
+*   **Automated Discovery**: recursively finds all valid Python projects in your workspace.
+*   **Smart Versioning**: Semantically bumps versions (`major`, `minor`, `patch`) in `pyproject.toml` and `__init__.py`.
+*   **Zero-Config Git Ops**: Auto-stages, commits, and tags releases with clean messages.
+*   **PyPI Publishing**: Builds wheels/sdist and uploads to PyPI automatically.
+*   **Bulk Operations**: **Release, Install, or Check Status of ALL projects at once.**
+*   **Task Runner**: Execute any shell command across your entire suite (`relm run "..."`).
+*   **Developer Friendly**: "Safety checks" prevent running in system roots.
+
+---
 
 ## ⚙️ Configuration & Advanced Usage
 
-### CLI Arguments
+`relm` is controlled entirely via CLI arguments.
 
-The `relm` CLI is organized into subcommands.
-
-#### Global Arguments
-
+### Global Arguments
 | Argument | Default | Description |
-|---|---|---|
-| `--path` | `.` | The root directory to scan for projects. |
+| :--- | :--- | :--- |
+| `--path` | `.` | Root directory to scan for projects. |
 
-#### `list` Command
+### Commands
 
-Lists all projects found in the specified path.
+#### `list`
+Lists all discovered projects, their versions, and paths.
 
-```bash
-relm list --path /path/to/your/projects
-```
+#### `install`
+Installs projects into the current environment.
+| Argument | Description |
+| :--- | :--- |
+| `project_name` | Name of the project or `all`. |
+| `--no-editable` | Install in standard mode (default is editable `-e`). |
 
-#### `release` Command
+#### `run`
+Executes a shell command in each project's directory.
+| Argument | Description |
+| :--- | :--- |
+| `command_string` | The command to run (e.g., `"ls -la"`). |
+| `project_name` | Name of the project or `all`. |
+| `--fail-fast` | Stop execution immediately if a command fails. |
 
-Handles the versioning and release process.
+#### `status`
+Shows the Git branch and dirty/clean status for projects.
+| Argument | Description |
+| :--- | :--- |
+| `project_name` | Name of the project or `all`. |
 
-| Argument | Default | Description |
-|---|---|---|
-| `project_name` | (required) | The name of the project to release. Use `all` to release all projects with detected changes. |
-| `type` | `patch` | The type of version bump (`major`, `minor`, `patch`). |
-| `-y`, `--yes` | `False` | Skips all confirmation prompts, assuming an answer of "yes." |
+#### `release`
+Orchestrates the version bump, build, and publish flow.
+| Argument | Description |
+| :--- | :--- |
+| `project_name` | Name of the project or `all`. |
+| `type` | Bump type: `major`, `minor`, or `patch` (default). |
+| `-y`, `--yes` | Skip confirmation prompts. |
+
+---
 
 ## 🏗️ Architecture
 
-### Directory Structure
-```
+`relm` follows a modular design to keep concerns separated:
+
+```text
 src/relm/
-├── __init__.py     # Package initializer
-├── banner.py       # ASCII art for the CLI
-├── core.py         # Core logic for project discovery
-├── git_ops.py      # Git-related operations
-├── main.py         # CLI entry point (argparse)
-├── release.py      # Release orchestration logic
-└── versioning.py   # Version bumping utilities
+├── __init__.py      # Package init
+├── banner.py        # ASCII art logo
+├── core.py          # Project discovery & parsing logic
+├── git_ops.py       # Git commands (status, commit, tag, push)
+├── install.py       # pip installation wrappers
+├── main.py          # CLI Entry Point & Argument Parsing
+├── release.py       # Release orchestration workflow
+├── runner.py        # Subprocess execution for 'run' command
+└── versioning.py    # Semantic version bumping
 ```
 
-### Core Logic Flow
-1. **`main.py`**: Parses CLI arguments and orchestrates the requested command (`list` or `release`).
-2. **`core.py`**: The `find_projects` function recursively scans the specified directory for `pyproject.toml` files and parses them to identify valid projects.
-3. **`release.py`**: The `perform_release` function coordinates the release process, calling other modules for specific tasks.
-4. **`versioning.py`**: Bumps the version number in `pyproject.toml` and `__init__.py`.
-5. **`git_ops.py`**: Handles staging, committing, and pushing changes to the remote Git repository.
+### Logic Flow
+1.  **Discovery**: `main.py` calls `core.py` to map the directory tree.
+2.  **Action**: The user's command (`release`, `install`, etc.) is dispatched to the relevant module.
+3.  **Execution**: Modules like `runner.py` or `git_ops.py` interact with the system shell to perform the work.
+
+---
+
+## 🗺️ Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for the detailed vision.
+
+*   [x] Bulk Release Support
+*   [x] Task Runner (`relm run`)
+*   [x] Project Status (`relm status`)
+*   [ ] Changelog Generation
+*   [ ] Dependency Graph Awareness
+
+---
 
 ## 🤝 Contributing & License
 
-Contributions are welcome! Please feel free to submit a pull request or open an issue.
+Contributions are welcome! Please submit a PR or open an issue.
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Licensed under **MIT**. See [LICENSE](LICENSE) for details.
