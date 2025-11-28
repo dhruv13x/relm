@@ -1,95 +1,67 @@
-# 🗺️ relm Roadmap
+# 🗺️ relm Smart Roadmap
 
-This document outlines the strategic vision for `relm`, categorized into phases from foundational requirements to ambitious, long-term goals.
+This document outlines the strategic vision for `relm`, categorized from foundational essentials to "God Level" ambitions. It serves as a living guide for development, prioritizing stability, ecosystem integration, and future-forward capabilities.
 
 ---
 
-## Phase 1: Foundation (Q1)
+## Phase 1: Foundation (CRITICALLY MUST HAVE)
 **Focus**: Core functionality, stability, security, and basic usage.
+**Timeline**: Q1
 
-- [x] Initial CLI release (`list`, `release`)
-- [ ] Add support for custom commit messages during release
-- [ ] Add support for pre-release versions (e.g., `alpha`, `beta`, `rc`)
-- [ ] Enhanced error handling and user feedback
-- [ ] Comprehensive unit and integration test suite
+- [x] **Project Discovery & Listing** (`relm list`) - *Automatically find projects with `pyproject.toml`.*
+- [x] **Basic Release Flow** (`relm release`) - *Version bumping, tagging, and committing.*
+- [x] **Bulk Operations** - *Release, install, or run commands across all projects at once.*
+- [x] **Git Integration** - *Automated staging, committing, tagging, and pushing.*
+- [x] **Status Reporting** (`relm status`) - *View git status and versions for all projects.*
+- [x] **Comprehensive Unit Tests** - *Existing `tests/` directory and test runners.*
+- [ ] **Custom Commit Messages** - *Allow users to customize the release commit message template.*
+- [ ] **Pre-release Version Support** - *Support for `alpha`, `beta`, and `rc` suffixes.*
+- [ ] **Workspace Cleaning** (`relm clean`) - *Recursively remove build artifacts (`dist/`, `build/`, `__pycache__`).*
 
 ---
 
-## Phase 2: The Standard (Q2)
+## Phase 2: The Standard (MUST HAVE)
 **Focus**: Feature parity with top competitors, user experience improvements, and robust error handling.
+**Timeline**: Q2
 
-- [ ] Add a `changelog` command to generate a changelog from commit history
-- [ ] Interactive mode for guided releases
-- [ ] Configuration file support (`.relm.toml`) to reduce CLI arguments
-- [ ] Pre-flight checks (e.g., check for clean git status, valid credentials)
-- [ ] Support for non-PyPI package indexes
-
----
-
-## Phase 3: The Ecosystem (Q3)
-**Focus**: Webhooks, API exposure, 3rd party plugins, and extensibility.
-
-- [ ] Plugin architecture for custom release steps (e.g., run tests, build docs)
-- [ ] Webhook notifications (Slack, Discord, etc.) on successful or failed releases
-- [ ] Integration with CI/CD platforms (GitHub Actions, GitLab CI)
-- [ ] SDK for programmatic releases from other Python tools
-- [ ] Support for monorepos with mixed languages (e.g., Node.js, Go)
+- [ ] **Automated Changelog Generation** - *Parse Conventional Commits to generate/update `CHANGELOG.md`.*
+- [ ] **Configuration File Support** (`.relm.toml`) - *Global configuration to reduce CLI argument repetition.*
+- [ ] **Dependency Awareness** - *Topological sort for execution (build `lib-a` before `app-b`).*
+- [ ] **"Changed Since" Detection** - *Only run commands on projects modified since the last release (CI optimization).*
+- [ ] **Project Scaffolding** (`relm create`) - *Generate new standard Python projects from templates.*
+- [ ] **Advanced Interactive Mode** - *Guided wizard for releases (selecting version bump, editing notes).*
+- [ ] **Pre-flight Checks** - *Validate credentials, registry access, and environment health before starting.*
 
 ---
 
-## Phase 4: The Vision (GOD LEVEL) (Q4)
+## Phase 3: The Ecosystem (INTEGRATION & SHOULD HAVE)
+**Focus**: Webhooks, API exposure, 3rd party plugins, SDK generation, and extensibility.
+**Timeline**: Q3
+
+- [ ] **CI/CD Platform Integration** - *Native support for generating GitHub Actions/GitLab CI workflows.*
+- [ ] **Webhook Notifications** - *Post to Slack/Discord/Teams upon successful or failed releases.*
+- [ ] **Plugin Architecture** - *Hooks for custom build steps (e.g., "run this script before tagging").*
+- [ ] **Non-PyPI Index Support** - *First-class support for private registries (Artifactory, Nexus) configuration.*
+- [ ] **Public SDK** - *Stabilize internal APIs (`relm.core`, `relm.git_ops`) for external tool usage.*
+- [ ] **Mixed-Language Monorepo Support** - *Extend discovery to `package.json` (Node) or `go.mod` (Go).*
+
+---
+
+## Phase 4: The Vision (GOD LEVEL)
 **Focus**: "Futuristic" features, AI integration, advanced automation, and industry-disrupting capabilities.
+**Timeline**: Q4
 
-- [ ] AI-powered release notes generation based on commit analysis
-- [ ] Automated dependency analysis and upgrade recommendations
-- [ ] Predictive release scheduling based on commit velocity and project milestones
-- [ ] Cross-repository release orchestration and dependency management
-- [ ] "Shadow release" mode to simulate a release without publishing
+- [ ] **AI-Powered Release Notes** - *Use LLMs to summarize code diffs into human-readable release notes.*
+- [ ] **Predictive Release Scheduling** - *Analyze commit velocity to suggest optimal release windows.*
+- [ ] **Cross-Repository Dependency Graph** - *Link and manage dependencies across multiple git repositories.*
+- [ ] **"Shadow Release" Mode** - *Simulate a full release (build, publish to local mock registry, install, test) without side effects.*
+- [ ] **Automated Dependency Upgrades** - *Local "Dependabot" that bumps dependencies and runs tests automatically.*
 
 ---
 
 ## The Sandbox (OUT OF THE BOX / OPTIONAL)
 **Focus**: Wild, creative, experimental ideas that set the project apart.
 
-- [ ] Gamification of the release process (e.g., achievements for frequent releases)
-- [ ] Voice-activated releases ("Hey relm, release a new version")
-- [ ] Integration with IoT devices to signal release status (e.g., a light turns green on success)
-
----
-
-## Proposed Features (Detailed Analysis)
-
-1. **Dependency Awareness & Graph Resolution (Critical)**
-   Currently, relm treats every project as an isolated island. It lists them and releases them, but it doesn't understand how they relate to one another.
-   * *The Need*: In a tool suite, project-a often depends on project-b.
-   * *Missing Feature*:
-       * **Topological Sort**: Operations (install/release) should run in dependency order (e.g., build project-b before project-a).
-       * **Cascading Releases**: If project-b releases a breaking change, the tool should detect that project-a needs its dependency requirement updated and potentially a version bump as well.
-       * **Workspace Linking**: Ability to toggle dependencies between "local path" (for dev) and "pypi version" (for release).
-
-2. **Bulk Command Execution (Task Runner)**
-   You can install and release, but you cannot currently run arbitrary commands across the suite.
-   * *The Need*: A developer wants to run tests or linters for all projects with one command.
-   * *Missing Feature*: A `relm run <command>` or `relm exec` command.
-       * Example: `relm run test` (triggers pytest in every project).
-       * Example: `relm run lint` (triggers ruff in every project).
-
-3. **Automated Changelog Generation**
-   The current release process bumps the version and tags git, but it doesn't appear to generate release notes.
-   * *The Need*: Consumers need to know what changed between v0.1.1 and v0.1.2.
-   * *Missing Feature*: Integration with "Conventional Commits" to parse git history since the last tag and automatically append to a `CHANGELOG.md` file before committing the release.
-
-4. **Project Scaffolding (init / create)**
-   The tool can manage existing projects, but it cannot create new ones.
-   * *The Need*: Adding a new tool to the suite requires manually creating folders and copying pyproject.toml boilerplate.
-   * *Missing Feature*: A `relm create <project_name>` command that generates a standardized folder structure, a configured pyproject.toml, and basic source files based on a built-in template.
-
-5. **Clean / Prune Functionality**
-   Building distributions creates build/, dist/, and .egg-info/ directories scattered throughout the workspace.
-   * *The Need*: Quickly resetting the workspace to a pristine state.
-   * *Missing Feature*: A `relm clean` command to recursively remove build artifacts and `__pycache__` from all projects.
-
-6. **"Changed Since" Detection (CI Optimization)**
-   While `relm release` has a check for git changes, generic task running usually lacks this.
-   * *The Need*: In a CI environment, I only want to run tests for projects that have actually changed (or whose dependencies have changed) since the last commit/branch point.
-   * *Missing Feature*: A flag like `relm run test --affected` which calculates the diff graph and only targets modified projects.
+- [ ] **Voice Control** - *"Hey relm, ship it to production."*
+- [ ] **IoT Integration** - *Flash smart lights red on build failure, green on release success.*
+- [ ] **Gamification** - *Leaderboards and achievements for release frequency and quality.*
