@@ -102,13 +102,13 @@ class TestVersioning(TestCase):
     @patch("pathlib.Path.is_file")
     @patch("pathlib.Path.read_text")
     @patch("pathlib.Path.write_text")
-    @patch("pathlib.Path.iterdir")
-    def test_update_version_tests_single_quotes(self, mock_iterdir, mock_write, mock_read, mock_is_file, mock_exists):
+    @patch("pathlib.Path.rglob")
+    def test_update_version_tests_single_quotes(self, mock_rglob, mock_write, mock_read, mock_is_file, mock_exists):
         project_path = Path("/project")
         # Mock tests directory iteration
         test_file = project_path / "tests/test_v.py"
         mock_exists.return_value = True # tests dir exists
-        mock_iterdir.return_value = [test_file]
+        mock_rglob.return_value = [test_file]
         mock_is_file.return_value = True
 
         # Content with single quotes
@@ -116,7 +116,7 @@ class TestVersioning(TestCase):
         
         updated = update_version_tests(project_path, "1.0.0", "1.0.1")
         
-        mock_write.assert_called_with("version='1.0.1'")
+        mock_write.assert_called_with("version='1.0.1'", encoding='utf-8')
         self.assertEqual(len(updated), 1)
 
     def test_update_version_tests_no_match(self):
