@@ -98,26 +98,17 @@ class TestVersioning(TestCase):
         self.assertIn('tests/test_v.py', updated)
         self.assertEqual(test_file.read_text(), 'assert version == "1.1.0"\n')
 
-    @patch("pathlib.Path.exists")
-    @patch("pathlib.Path.is_file")
-    @patch("pathlib.Path.read_text")
-    @patch("pathlib.Path.write_text")
-    @patch("pathlib.Path.rglob")
-    def test_update_version_tests_single_quotes(self, mock_rglob, mock_write, mock_read, mock_is_file, mock_exists):
+    def test_update_version_tests_single_quotes(self):
         project_path = Path("/project")
-        # Mock tests directory iteration
-        test_file = project_path / "tests/test_v.py"
-        mock_exists.return_value = True # tests dir exists
-        mock_rglob.return_value = [test_file]
-        mock_is_file.return_value = True
+        self.fs.create_dir(project_path / "tests")
+        test_file = project_path / "tests" / "test_v.py"
+        self.fs.create_file(test_file, contents="version='1.0.0'\n")
 
-        # Content with single quotes
-        mock_read.return_value = "version='1.0.0'"
-        
         updated = update_version_tests(project_path, "1.0.0", "1.0.1")
         
-        mock_write.assert_called_with("version='1.0.1'", encoding='utf-8')
         self.assertEqual(len(updated), 1)
+        self.assertIn('tests/test_v.py', updated)
+        self.assertEqual(test_file.read_text(), "version='1.0.1'\n")
 
     def test_update_version_tests_no_match(self):
         project_path = Path("/project")
