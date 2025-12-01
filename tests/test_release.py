@@ -11,7 +11,7 @@ class TestRelease(unittest.TestCase):
     def setUp(self):
         self.project = Project(
             name="test-project",
-            version="1.0.0",
+            version="1.0.1",
             path=Path("/tmp/test_project"),
             description="Test project"
         )
@@ -97,7 +97,7 @@ class TestRelease(unittest.TestCase):
         result = perform_release(self.project, "patch", yes_mode=True)
         self.assertTrue(result)
 
-        mock_bump.assert_called_with("1.0.0", "patch")
+        mock_bump.assert_called_with("1.0.1", "patch")
         mock_commit.assert_called()
         mock_tag.assert_called()
         mock_push.assert_called()
@@ -293,7 +293,7 @@ class TestRelease(unittest.TestCase):
 
         # Check that update_file_content was called for the correct __init__.py path
         init_path = self.project.path / "test_project/__init__.py"
-        mock_update_file.assert_any_call(init_path, "1.0.0", "1.0.1")
+        mock_update_file.assert_any_call(init_path, "1.0.1", "1.0.1")
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ class TestMain(unittest.TestCase):
     @patch("relm.main.console")
     def test_list_projects(self, mock_console, mock_find_projects):
         mock_find_projects.return_value = [
-            Project("proj1", "1.0.0", Path("path/to/proj1"), "desc1"),
+            Project("proj1", "1.0.1", Path("path/to/proj1"), "desc1"),
             Project("proj2", "2.0.0", Path("path/to/proj2"), None)
         ]
 
@@ -48,7 +48,7 @@ class TestMain(unittest.TestCase):
             type="patch",
             yes=True
         )
-        project = Project("proj1", "1.0.0", Path("."), "desc")
+        project = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [project]
         mock_perform_release.return_value = True
 
@@ -86,8 +86,8 @@ class TestMain(unittest.TestCase):
             type="patch",
             yes=True
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
-        p2 = Project("proj2", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
+        p2 = Project("proj2", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1, p2]
         mock_perform_release.side_effect = [True, False] # One released, one skipped
 
@@ -109,7 +109,7 @@ class TestMain(unittest.TestCase):
             type="patch",
             yes=True
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
         mock_perform_release.side_effect = Exception("Boom")
 
@@ -129,8 +129,8 @@ class TestMain(unittest.TestCase):
             project_name="all",
             fail_fast=False
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
-        p2 = Project("proj2", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
+        p2 = Project("proj2", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1, p2]
         mock_run_cmd.side_effect = [True, False]
 
@@ -153,8 +153,8 @@ class TestMain(unittest.TestCase):
             project_name="all",
             fail_fast=True
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
-        p2 = Project("proj2", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
+        p2 = Project("proj2", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1, p2]
         mock_run_cmd.side_effect = [False, True] # First fails
 
@@ -175,7 +175,7 @@ class TestMain(unittest.TestCase):
             project_name="proj1",
             fail_fast=False
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
         mock_run_cmd.return_value = True
 
@@ -215,8 +215,8 @@ class TestMain(unittest.TestCase):
             project_name="all",
             no_editable=False
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
-        p2 = Project("proj2", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
+        p2 = Project("proj2", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1, p2]
         mock_install.side_effect = [True, False]
 
@@ -236,7 +236,7 @@ class TestMain(unittest.TestCase):
             project_name="proj1",
             no_editable=False
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
         mock_install.return_value = True
 
@@ -273,7 +273,7 @@ class TestMain(unittest.TestCase):
             path=".",
             project_name="all"
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
         mock_get_branch.return_value = "main"
         mock_is_clean.return_value = True
@@ -295,7 +295,7 @@ class TestMain(unittest.TestCase):
             path=".",
             project_name="proj1"
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
         mock_get_branch.return_value = "main"
         mock_is_clean.return_value = False
@@ -368,7 +368,7 @@ class TestMain(unittest.TestCase):
             path=".",
             project_name="all"
         )
-        p1 = Project("proj1", "1.0.0", Path("."), "desc")
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
         p2 = Project("proj2", "2.0.0", Path("."), "desc")
         mock_find_projects.return_value = [p1, p2]
         

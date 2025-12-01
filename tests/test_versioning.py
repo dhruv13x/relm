@@ -11,8 +11,8 @@ class TestVersioning(TestCase):
         self.setUpPyfakefs()
 
 #    def test_parse_version(self):
-#        self.assertEqual(parse_version("1.0.0"), (1, 0, 0))
-#        self.assertEqual(parse_version("1.0.0"), (0, 1, 0))
+#        self.assertEqual(parse_version("1.0.1"), (1, 0, 0))
+#        self.assertEqual(parse_version("1.0.1"), (0, 1, 0))
 #        self.assertEqual(parse_version("1.2"), (1, 2, 0))
 
     def test_parse_version_invalid(self):
@@ -34,17 +34,17 @@ class TestVersioning(TestCase):
 
     def test_update_file_content_toml(self):
         path = Path("pyproject.toml")
-        self.fs.create_file("pyproject.toml", contents='version = "1.0.0"\n')
+        self.fs.create_file("pyproject.toml", contents='version = "1.0.1"\n')
 
-        result = update_file_content(path, "1.0.0", "1.1.0")
+        result = update_file_content(path, "1.0.1", "1.1.0")
         self.assertTrue(result)
         self.assertEqual(path.read_text(), 'version = "1.1.0"\n')
 
     def test_update_file_content_init(self):
         path = Path("__init__.py")
-        self.fs.create_file("__init__.py", contents='__version__ = "1.0.0"\n')
+        self.fs.create_file("__init__.py", contents='__version__ = "1.0.1"\n')
 
-        result = update_file_content(path, "1.0.0", "1.1.0")
+        result = update_file_content(path, "1.0.1", "1.1.0")
         self.assertTrue(result)
         self.assertEqual(path.read_text(), '__version__ = "1.1.0"\n')
 
@@ -52,18 +52,18 @@ class TestVersioning(TestCase):
         path = Path("other.txt")
         self.fs.create_file("other.txt", contents='some text\n')
 
-        result = update_file_content(path, "1.0.0", "1.1.0")
+        result = update_file_content(path, "1.0.1", "1.1.0")
         self.assertFalse(result)
         self.assertEqual(path.read_text(), 'some text\n')
 
     def test_update_file_content_not_exists(self):
         path = Path("nonexistent.txt")
-        result = update_file_content(path, "1.0.0", "1.1.0")
+        result = update_file_content(path, "1.0.1", "1.1.0")
         self.assertFalse(result)
 
     def test_update_file_content_error(self):
         path = Path("protected.txt")
-        self.fs.create_file("protected.txt", contents='version = "1.0.0"')
+        self.fs.create_file("protected.txt", contents='version = "1.0.1"')
 
         # We need to simulate an exception when reading or writing
         # Since we are using pyfakefs, simple patch might be tricky if the function uses Path object methods
@@ -83,7 +83,7 @@ class TestVersioning(TestCase):
         mock_path.exists.return_value = True
         mock_path.read_text.side_effect = Exception("Read error")
 
-        result = update_file_content(mock_path, "1.0.0", "1.1.0")
+        result = update_file_content(mock_path, "1.0.1", "1.1.0")
         self.assertFalse(result)
 
 
@@ -91,9 +91,9 @@ class TestVersioning(TestCase):
         project_path = Path("/project")
         self.fs.create_dir(project_path / "tests")
         test_file = project_path / "tests" / "test_v.py"
-        self.fs.create_file(test_file, contents='assert version == "1.0.0"\n')
+        self.fs.create_file(test_file, contents='assert version == "1.0.1"\n')
 
-        updated = update_version_tests(project_path, "1.0.0", "1.1.0")
+        updated = update_version_tests(project_path, "1.0.1", "1.1.0")
         self.assertEqual(len(updated), 1)
         self.assertIn('tests/test_v.py', updated)
         self.assertEqual(test_file.read_text(), 'assert version == "1.1.0"\n')
@@ -121,12 +121,12 @@ class TestVersioning(TestCase):
         test_file = project_path / "tests" / "test_v.py"
         self.fs.create_file(test_file, contents='assert version == "0.9.0"\n')
 
-        updated = update_version_tests(project_path, "1.0.0", "1.1.0")
+        updated = update_version_tests(project_path, "1.0.1", "1.1.0")
         self.assertEqual(len(updated), 0)
 
     def test_update_version_tests_no_tests_dir(self):
         project_path = Path("/project")
-        updated = update_version_tests(project_path, "1.0.0", "1.1.0")
+        updated = update_version_tests(project_path, "1.0.1", "1.1.0")
         self.assertEqual(len(updated), 0)
 
     @patch("pathlib.Path.read_text")
@@ -136,12 +136,12 @@ class TestVersioning(TestCase):
         """
         project_path = Path("/project")
         self.fs.create_dir(project_path / "tests")
-        self.fs.create_file(project_path / "tests" / "test_v.py", contents='version = "1.0.0"')
+        self.fs.create_file(project_path / "tests" / "test_v.py", contents='version = "1.0.1"')
 
         mock_read_text.side_effect = Exception("Read error")
 
         # The function should swallow the exception and continue
-        updated_files = update_version_tests(project_path, "1.0.0", "1.1.0")
+        updated_files = update_version_tests(project_path, "1.0.1", "1.1.0")
         self.assertEqual(len(updated_files), 0)
 
 
