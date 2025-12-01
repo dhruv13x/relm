@@ -11,6 +11,7 @@ from .release import perform_release
 from .install import install_project
 from .git_ops import is_git_clean, get_current_branch
 from .runner import run_project_command
+from .verify import verify_project_release
 from .banner import print_logo
 
 console = Console()
@@ -73,6 +74,10 @@ def main():
     # Status command
     status_parser = subparsers.add_parser("status", help="Check git status of projects")
     status_parser.add_argument("project_name", help="Name of the project to check or 'all'", nargs="?", default="all")
+
+    # Verify command
+    verify_parser = subparsers.add_parser("verify", help="Verify if the local release is available on PyPI")
+    verify_parser.add_argument("project_name", help="Name of the project to verify or 'all'", nargs="?", default="all")
 
     args = parser.parse_args()
     root_path = Path(args.path).resolve()
@@ -237,6 +242,37 @@ def main():
             )
 
         console.print(table)
+
+    elif args.command == "verify":
+        all_projects = find_projects(root_path)
+        target_projects = []
+
+        if args.project_name == "all":
+            target_projects = all_projects
+            console.print(f"[bold]Verifying PyPI availability for {len(target_projects)} projects...[/bold]")
+        else:
+            target = next((p for p in all_projects if p.name == args.project_name), None)
+            if not target:
+                console.print(f"[red]Project '{args.project_name}' not found in {root_path}[/red]")
+                sys.exit(1)
+            target_projects = [target]
+
+        results = {"verified": [], "failed": []}
+
+        for project in target_projects:
+            success, message = verify_project_release(project)
+            if success:
+                console.print(f"[green]✔ {project.name} (v{project.version}): {message}[/green]")
+                results["verified"].append(project.name)
+            else:
+                console.print(f"[red]✖ {project.name} (v{project.version}): {message}[/red]")
+                results["failed"].append(project.name)
+        
+        if args.project_name == "all":
+            console.rule("Verification Summary")
+            console.print(f"[green]Verified: {len(results['verified'])}[/green]")
+            if results["failed"]:
+                console.print(f"[red]Failed:   {len(results['failed'])}[/red]")
 
 if __name__ == "__main__":
     main()

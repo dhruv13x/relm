@@ -117,6 +117,12 @@ Shows the Git branch and dirty/clean status for projects.
 | :--- | :--- |
 | `project_name` | Name of the project or `all`. |
 
+#### `verify`
+Verifies if the locally released version (tag) is available on PyPI.
+| Argument | Description |
+| :--- | :--- |
+| `project_name` | Name of the project or `all`. |
+
 #### `release`
 Orchestrates the version bump, build, and publish flow.
 | Argument | Description |
@@ -141,6 +147,7 @@ src/relm/
 ├── main.py          # CLI Entry Point & Argument Parsing
 ├── release.py       # Release orchestration workflow
 ├── runner.py        # Subprocess execution for 'run' command
+├── verify.py        # PyPI availability verification
 └── versioning.py    # Semantic version bumping
 ```
 
