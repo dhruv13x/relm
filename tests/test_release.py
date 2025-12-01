@@ -111,7 +111,7 @@ class TestRelease(unittest.TestCase):
     @patch("relm.release.console")
     def test_perform_release_retry_existing(self, mock_console, mock_push, mock_tag, mock_is_clean, mock_confirm, mock_tag_exists, mock_fetch):
         # Case: Not tagged locally, user says Retry (skip bump)
-        mock_tag_exists.side_effect = [False, False] # Not tagged initially, and new tag doesn't exist
+        mock_tag_exists.return_value = False # Not tagged initially, and new tag doesn't exist
         mock_confirm.side_effect = [True, True, True] # Retry? Yes. Proceed? Yes. Push? Yes.
         mock_is_clean.return_value = True
 
