@@ -38,7 +38,7 @@ class TestVerify(unittest.TestCase):
         
         success, message = verify_project_release(self.project)
         self.assertFalse(success)
-        self.assertIn("Local git tag 'v1.0.0' does not exist", message)
+        self.assertIn(f"Local git tag 'v{self.project.version}' does not exist", message)
 
     @patch("relm.verify.git_tag_exists")
     @patch("subprocess.run")

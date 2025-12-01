@@ -58,7 +58,7 @@ class TestRelease(unittest.TestCase):
 
         result = perform_release(self.project, "patch", check_changes=True)
         self.assertFalse(result)
-        mock_console.print.assert_any_call("[dim]No changes detected since v1.0.0. Skipping.[/dim]")
+        mock_console.print.assert_any_call(f"[dim]No changes detected since v{self.project.version}. Skipping.[/dim]")
 
     @patch("relm.release.git_fetch_tags")
     @patch("relm.release.git_tag_exists")
@@ -119,7 +119,7 @@ class TestRelease(unittest.TestCase):
         self.assertTrue(result)
 
         # Verify no file updates happen (we can't easily assert on that unless we mock the calls, but we check logic flow)
-        mock_tag.assert_called_with(self.project.path, "v1.0.0", "Release v1.0.0")
+        mock_tag.assert_called_with(self.project.path, f"v{self.project.version}", f"Release v{self.project.version}")
 
     @patch("relm.release.git_fetch_tags")
     @patch("relm.release.git_tag_exists")
