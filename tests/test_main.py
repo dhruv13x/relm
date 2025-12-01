@@ -358,5 +358,35 @@ class TestMain(unittest.TestCase):
 
         mock_list_projects.assert_called()
 
+    @patch("argparse.ArgumentParser.parse_args")
+    @patch("relm.main.find_projects")
+    @patch("relm.main.verify_project_release")
+    @patch("relm.main.console")
+    def test_main_verify_all(self, mock_console, mock_verify, mock_find_projects, mock_parse_args):
+        mock_parse_args.return_value = MagicMock(
+            command="verify",
+            path=".",
+            project_name="all"
+        )
+        p1 = Project("proj1", "1.0.0", Path("."), "desc")
+        p2 = Project("proj2", "2.0.0", Path("."), "desc")
+        mock_find_projects.return_value = [p1, p2]
+        
+        mock_verify.side_effect = [(True, "Verified"), (False, "Not found")]
+
+        main()
+
+        self.assertEqual(mock_verify.call_count, 2)
+        
+        # Verify that a Table object was printed at some point
+        table_printed = False
+        for call_args in mock_console.print.call_args_list:
+            arg = call_args[0][0]
+            if hasattr(arg, "rows"): # Identify it's a Table
+                 table_printed = True
+                 break
+        
+        self.assertTrue(table_printed, "A Table object should have been printed to console")
+
 if __name__ == "__main__":
     unittest.main()

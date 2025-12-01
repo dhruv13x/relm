@@ -4,7 +4,6 @@ import argparse
 import sys
 from pathlib import Path
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
 from .core import find_projects
 from .release import perform_release
@@ -258,15 +257,31 @@ def main():
             target_projects = [target]
 
         results = {"verified": [], "failed": []}
+        
+        table = Table(title=f"PyPI Verification Status for {len(target_projects)} Projects")
+        table.add_column("Project", style="cyan", no_wrap=True)
+        table.add_column("Version", style="magenta")
+        table.add_column("Status", style="bold")
+        table.add_column("Details")
 
-        for project in target_projects:
-            success, message = verify_project_release(project)
-            if success:
-                console.print(f"[green]✔ {project.name} (v{project.version}): {message}[/green]")
-                results["verified"].append(project.name)
-            else:
-                console.print(f"[red]✖ {project.name} (v{project.version}): {message}[/red]")
-                results["failed"].append(project.name)
+        with console.status(f"[bold green]Verifying {len(target_projects)} projects...[/bold green]"):
+            for project in target_projects:
+                success, message = verify_project_release(project)
+                if success:
+                    results["verified"].append(project.name)
+                    status_str = "[green]Verified[/green]"
+                else:
+                    results["failed"].append(project.name)
+                    status_str = "[red]Failed[/red]"
+                
+                table.add_row(
+                    project.name,
+                    project.version,
+                    status_str,
+                    message
+                )
+        
+        console.print(table)
         
         if args.project_name == "all":
             console.rule("Verification Summary")
