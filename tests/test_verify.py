@@ -24,7 +24,7 @@ class TestVerify(unittest.TestCase):
         
         # Mock pip output
         mock_run.return_value = MagicMock(
-            stdout=json.dumps({"name": "test-project", "versions": ["1.0.0", "0.9.0"]}),
+            stdout=json.dumps({"name": "test-project", "versions": [self.project.version, "0.9.0"]}),
             returncode=0
         )
         
