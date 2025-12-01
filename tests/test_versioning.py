@@ -102,13 +102,18 @@ class TestVersioning(TestCase):
         project_path = Path("/project")
         self.fs.create_dir(project_path / "tests")
         test_file = project_path / "tests" / "test_v.py"
-        self.fs.create_file(test_file, contents="version='1.0.0'\n")
+        
+        # Obfuscate strings to avoid auto-update during release
+        v_old = "1.0" + ".0"
+        v_new = "1.0" + ".1"
+        
+        self.fs.create_file(test_file, contents=f"version='{v_old}'\n")
 
-        updated = update_version_tests(project_path, "1.0.0", "1.0.1")
+        updated = update_version_tests(project_path, v_old, v_new)
         
         self.assertEqual(len(updated), 1)
         self.assertIn('tests/test_v.py', updated)
-        self.assertEqual(test_file.read_text(), "version='1.0.1'\n")
+        self.assertEqual(test_file.read_text(), f"version='{v_new}'\n")
 
     def test_update_version_tests_no_match(self):
         project_path = Path("/project")
