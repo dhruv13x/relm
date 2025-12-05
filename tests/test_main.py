@@ -395,5 +395,64 @@ class TestMain(unittest.TestCase):
         
         self.assertTrue(table_printed, "A Table object should have been printed to console")
 
+    @patch("argparse.ArgumentParser.parse_args")
+    @patch("relm.main.find_projects")
+    @patch("relm.main.clean_project")
+    @patch("relm.main.console")
+    def test_main_clean_all(self, mock_console, mock_clean_project, mock_find_projects, mock_parse_args):
+        mock_parse_args.return_value = MagicMock(
+            command="clean",
+            path=".",
+            project_name="all"
+        )
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
+        p2 = Project("proj2", "2.0.0", Path("."), "desc")
+        mock_find_projects.return_value = [p1, p2]
+
+        mock_clean_project.side_effect = [[Path("dist")], []] # p1 cleaned, p2 nothing
+
+        main()
+
+        self.assertEqual(mock_clean_project.call_count, 2)
+        mock_console.rule.assert_called_with("Clean Summary")
+        mock_console.print.assert_any_call(f"Removed 1 artifacts across 2 projects.")
+
+    @patch("argparse.ArgumentParser.parse_args")
+    @patch("relm.main.find_projects")
+    @patch("relm.main.clean_project")
+    @patch("relm.main.console")
+    def test_main_clean_single(self, mock_console, mock_clean_project, mock_find_projects, mock_parse_args):
+        mock_parse_args.return_value = MagicMock(
+            command="clean",
+            path=".",
+            project_name="proj1"
+        )
+        p1 = Project("proj1", "1.0.1", Path("."), "desc")
+        mock_find_projects.return_value = [p1]
+
+        mock_clean_project.return_value = [Path("dist")]
+
+        main()
+
+        mock_clean_project.assert_called_once()
+        mock_console.rule.assert_called_with("Clean Summary")
+
+    @patch("argparse.ArgumentParser.parse_args")
+    @patch("relm.main.find_projects")
+    @patch("relm.main.console")
+    def test_main_clean_project_not_found(self, mock_console, mock_find_projects, mock_parse_args):
+        mock_parse_args.return_value = MagicMock(
+            command="clean",
+            path=".",
+            project_name="nonexistent"
+        )
+        mock_find_projects.return_value = []
+
+        with self.assertRaises(SystemExit):
+            main()
+
+        root_path = Path(".").resolve()
+        mock_console.print.assert_any_call(f"[red]Project 'nonexistent' not found in {root_path}[/red]")
+
 if __name__ == "__main__":
     unittest.main()

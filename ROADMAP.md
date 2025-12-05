@@ -16,7 +16,7 @@ This document outlines the strategic vision for `relm`, categorized from foundat
 - [x] **Comprehensive Unit Tests** - *Existing `tests/` directory and test runners.*
 - [x] **Custom Commit Messages** - *Allow users to customize the release commit message template.*
 - [x] **Pre-release Version Support** - *Support for `alpha`, `beta`, and `rc` suffixes.*
-- [ ] **Workspace Cleaning** (`relm clean`) - *Recursively remove build artifacts (`dist/`, `build/`, `__pycache__`).*
+- [x] **Workspace Cleaning** (`relm clean`) - *Recursively remove build artifacts (`dist/`, `build/`, `__pycache__`).*
 
 ---
 
