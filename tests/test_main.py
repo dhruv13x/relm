@@ -6,9 +6,10 @@ from pathlib import Path
 import sys
 from relm.main import main, list_projects
 from relm.core import Project
+from relm.commands import list_command
 
 class TestMain(unittest.TestCase):
-    @patch("relm.main.find_projects")
+    @patch("relm.commands.list_command.find_projects")
     @patch("relm.main.console")
     def test_list_projects(self, mock_console, mock_find_projects):
         mock_find_projects.return_value = [
@@ -22,7 +23,7 @@ class TestMain(unittest.TestCase):
         args, _ = mock_console.print.call_args
         self.assertTrue(hasattr(args[0], "rows")) # It's a Table object
 
-    @patch("relm.main.find_projects")
+    @patch("relm.commands.list_command.find_projects")
     @patch("relm.main.console")
     def test_list_projects_empty(self, mock_console, mock_find_projects):
         mock_find_projects.return_value = []
@@ -30,24 +31,28 @@ class TestMain(unittest.TestCase):
         mock_console.print.assert_called_with("[yellow]No projects found in this directory.[/yellow]")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.list_projects")
-    def test_main_list(self, mock_list_projects, mock_parse_args):
-        mock_parse_args.return_value = MagicMock(command="list", path=".")
+    @patch("relm.commands.list_command.execute")
+    def test_main_list(self, mock_list_execute, mock_parse_args):
+        mock_parse_args.return_value = MagicMock(command="list", path=".", func=mock_list_execute)
         main()
-        mock_list_projects.assert_called()
+        mock_list_execute.assert_called()
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.perform_release")
+    @patch("relm.commands.release_command.find_projects")
+    @patch("relm.commands.release_command.perform_release")
     @patch("relm.main.console")
     def test_main_release_single_success(self, mock_console, mock_perform_release, mock_find_projects, mock_parse_args):
+        # We need to manually set the func attribute if we mock parse_args
+        from relm.commands.release_command import execute as release_execute
+
         mock_parse_args.return_value = MagicMock(
             command="release",
             path=".",
             project_name="proj1",
             type="patch",
             yes=True,
-            message="release: bump version to {version}"
+            message="release: bump version to {version}",
+            func=release_execute
         )
         project = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [project]
@@ -64,15 +69,17 @@ class TestMain(unittest.TestCase):
         )
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
+    @patch("relm.commands.release_command.find_projects")
     @patch("relm.main.console")
     def test_main_release_project_not_found(self, mock_console, mock_find_projects, mock_parse_args):
+        from relm.commands.release_command import execute as release_execute
         mock_parse_args.return_value = MagicMock(
             command="release",
             path=".",
             project_name="nonexistent",
             type="patch",
-            yes=True
+            yes=True,
+            func=release_execute
         )
         mock_find_projects.return_value = []
 
@@ -82,16 +89,18 @@ class TestMain(unittest.TestCase):
         mock_console.print.assert_called()
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.perform_release")
+    @patch("relm.commands.release_command.find_projects")
+    @patch("relm.commands.release_command.perform_release")
     @patch("relm.main.console")
     def test_main_release_all(self, mock_console, mock_perform_release, mock_find_projects, mock_parse_args):
+        from relm.commands.release_command import execute as release_execute
         mock_parse_args.return_value = MagicMock(
             command="release",
             path=".",
             project_name="all",
             type="patch",
-            yes=True
+            yes=True,
+            func=release_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         p2 = Project("proj2", "1.0.1", Path("."), "desc")
@@ -102,19 +111,24 @@ class TestMain(unittest.TestCase):
 
         self.assertEqual(mock_perform_release.call_count, 2)
         # Verify summary printed
+        # Note: the summary is printed by the command itself using its console instance
+        # Since we inject `console` from `relm.main` into `execute`, and `main` uses `relm.main.console`,
+        # mocking `relm.main.console` should capture calls.
         mock_console.rule.assert_called_with("Bulk Release Summary")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.perform_release")
+    @patch("relm.commands.release_command.find_projects")
+    @patch("relm.commands.release_command.perform_release")
     @patch("relm.main.console")
     def test_main_release_all_exception(self, mock_console, mock_perform_release, mock_find_projects, mock_parse_args):
+        from relm.commands.release_command import execute as release_execute
         mock_parse_args.return_value = MagicMock(
             command="release",
             path=".",
             project_name="all",
             type="patch",
-            yes=True
+            yes=True,
+            func=release_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
@@ -125,16 +139,18 @@ class TestMain(unittest.TestCase):
         mock_console.print.assert_any_call("[red]Critical error releasing proj1: Boom[/red]")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.run_project_command")
+    @patch("relm.commands.run_command.find_projects")
+    @patch("relm.commands.run_command.run_project_command")
     @patch("relm.main.console")
     def test_main_run_all(self, mock_console, mock_run_cmd, mock_find_projects, mock_parse_args):
+        from relm.commands.run_command import execute as run_execute
         mock_parse_args.return_value = MagicMock(
             command="run",
             path=".",
             command_string="echo test",
             project_name="all",
-            fail_fast=False
+            fail_fast=False,
+            func=run_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         p2 = Project("proj2", "1.0.1", Path("."), "desc")
@@ -149,16 +165,18 @@ class TestMain(unittest.TestCase):
         mock_console.rule.assert_called_with("Execution Summary")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.run_project_command")
+    @patch("relm.commands.run_command.find_projects")
+    @patch("relm.commands.run_command.run_project_command")
     @patch("relm.main.console")
     def test_main_run_fail_fast(self, mock_console, mock_run_cmd, mock_find_projects, mock_parse_args):
+        from relm.commands.run_command import execute as run_execute
         mock_parse_args.return_value = MagicMock(
             command="run",
             path=".",
             command_string="echo test",
             project_name="all",
-            fail_fast=True
+            fail_fast=True,
+            func=run_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         p2 = Project("proj2", "1.0.1", Path("."), "desc")
@@ -171,16 +189,18 @@ class TestMain(unittest.TestCase):
         self.assertEqual(mock_run_cmd.call_count, 1)
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.run_project_command")
+    @patch("relm.commands.run_command.find_projects")
+    @patch("relm.commands.run_command.run_project_command")
     @patch("relm.main.console")
     def test_main_run_single_success(self, mock_console, mock_run_cmd, mock_find_projects, mock_parse_args):
+        from relm.commands.run_command import execute as run_execute
         mock_parse_args.return_value = MagicMock(
             command="run",
             path=".",
             command_string="echo test",
             project_name="proj1",
-            fail_fast=False
+            fail_fast=False,
+            func=run_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
@@ -192,15 +212,17 @@ class TestMain(unittest.TestCase):
         mock_console.print.assert_any_call("[green]Success: 1[/green] ['proj1']")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
+    @patch("relm.commands.run_command.find_projects")
     @patch("relm.main.console")
     def test_main_run_project_not_found(self, mock_console, mock_find_projects, mock_parse_args):
+        from relm.commands.run_command import execute as run_execute
         mock_parse_args.return_value = MagicMock(
             command="run",
             path=".",
             command_string="echo test",
             project_name="nonexistent",
-            fail_fast=False
+            fail_fast=False,
+            func=run_execute
         )
         mock_find_projects.return_value = []
 
@@ -212,15 +234,17 @@ class TestMain(unittest.TestCase):
         mock_console.print.assert_any_call(f"[red]Project 'nonexistent' not found in {root_path}[/red]")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.install_project")
+    @patch("relm.commands.install_command.find_projects")
+    @patch("relm.commands.install_command.install_project")
     @patch("relm.main.console")
     def test_main_install_all(self, mock_console, mock_install, mock_find_projects, mock_parse_args):
+        from relm.commands.install_command import execute as install_execute
         mock_parse_args.return_value = MagicMock(
             command="install",
             path=".",
             project_name="all",
-            no_editable=False
+            no_editable=False,
+            func=install_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         p2 = Project("proj2", "1.0.1", Path("."), "desc")
@@ -233,15 +257,17 @@ class TestMain(unittest.TestCase):
         mock_console.rule.assert_called_with("Bulk Install Summary")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.install_project")
+    @patch("relm.commands.install_command.find_projects")
+    @patch("relm.commands.install_command.install_project")
     @patch("relm.main.console")
     def test_main_install_single_success(self, mock_console, mock_install, mock_find_projects, mock_parse_args):
+        from relm.commands.install_command import execute as install_execute
         mock_parse_args.return_value = MagicMock(
             command="install",
             path=".",
             project_name="proj1",
-            no_editable=False
+            no_editable=False,
+            func=install_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
@@ -252,14 +278,16 @@ class TestMain(unittest.TestCase):
         mock_install.assert_called_once()
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
+    @patch("relm.commands.install_command.find_projects")
     @patch("relm.main.console")
     def test_main_install_project_not_found(self, mock_console, mock_find_projects, mock_parse_args):
+        from relm.commands.install_command import execute as install_execute
         mock_parse_args.return_value = MagicMock(
             command="install",
             path=".",
             project_name="nonexistent",
-            no_editable=False
+            no_editable=False,
+            func=install_execute
         )
         mock_find_projects.return_value = []
 
@@ -270,15 +298,17 @@ class TestMain(unittest.TestCase):
         mock_console.print.assert_any_call(f"[red]Project 'nonexistent' not found in {root_path}[/red]")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.get_current_branch")
-    @patch("relm.main.is_git_clean")
+    @patch("relm.commands.status_command.find_projects")
+    @patch("relm.commands.status_command.get_current_branch")
+    @patch("relm.commands.status_command.is_git_clean")
     @patch("relm.main.console")
     def test_main_status_all(self, mock_console, mock_is_clean, mock_get_branch, mock_find_projects, mock_parse_args):
+        from relm.commands.status_command import execute as status_execute
         mock_parse_args.return_value = MagicMock(
             command="status",
             path=".",
-            project_name="all"
+            project_name="all",
+            func=status_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
@@ -292,15 +322,17 @@ class TestMain(unittest.TestCase):
         self.assertTrue(hasattr(args[0], "rows"))
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.get_current_branch")
-    @patch("relm.main.is_git_clean")
+    @patch("relm.commands.status_command.find_projects")
+    @patch("relm.commands.status_command.get_current_branch")
+    @patch("relm.commands.status_command.is_git_clean")
     @patch("relm.main.console")
     def test_main_status_single(self, mock_console, mock_is_clean, mock_get_branch, mock_find_projects, mock_parse_args):
+        from relm.commands.status_command import execute as status_execute
         mock_parse_args.return_value = MagicMock(
             command="status",
             path=".",
-            project_name="proj1"
+            project_name="proj1",
+            func=status_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
@@ -312,13 +344,15 @@ class TestMain(unittest.TestCase):
         mock_console.print.assert_called()
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
+    @patch("relm.commands.status_command.find_projects")
     @patch("relm.main.console")
     def test_main_status_project_not_found(self, mock_console, mock_find_projects, mock_parse_args):
+        from relm.commands.status_command import execute as status_execute
         mock_parse_args.return_value = MagicMock(
             command="status",
             path=".",
-            project_name="nonexistent"
+            project_name="nonexistent",
+            func=status_execute
         )
         mock_find_projects.return_value = []
 
@@ -349,31 +383,34 @@ class TestMain(unittest.TestCase):
         mock_console.print.assert_any_call(f"[bold red]⚠️  Safety Warning: You are running relm in the system root ({root_path}).[/bold red]")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.list_projects")
+    @patch("relm.commands.list_command.execute")
     @patch("relm.main.console")
-    def test_main_safety_check_yes(self, mock_console, mock_list_projects, mock_parse_args):
+    def test_main_safety_check_yes(self, mock_console, mock_list_execute, mock_parse_args):
         # Determine the root path of the system
         root_path = Path.cwd().root
 
         mock_parse_args.return_value = MagicMock(
             command="list",
             path=str(root_path),
-            yes=True
+            yes=True,
+            func=mock_list_execute
         )
 
         main()
 
-        mock_list_projects.assert_called()
+        mock_list_execute.assert_called()
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.verify_project_release")
+    @patch("relm.commands.verify_command.find_projects")
+    @patch("relm.commands.verify_command.verify_project_release")
     @patch("relm.main.console")
     def test_main_verify_all(self, mock_console, mock_verify, mock_find_projects, mock_parse_args):
+        from relm.commands.verify_command import execute as verify_execute
         mock_parse_args.return_value = MagicMock(
             command="verify",
             path=".",
-            project_name="all"
+            project_name="all",
+            func=verify_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         p2 = Project("proj2", "2.0.0", Path("."), "desc")
@@ -396,14 +433,16 @@ class TestMain(unittest.TestCase):
         self.assertTrue(table_printed, "A Table object should have been printed to console")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.clean_project")
+    @patch("relm.commands.clean_command.find_projects")
+    @patch("relm.commands.clean_command.clean_project")
     @patch("relm.main.console")
     def test_main_clean_all(self, mock_console, mock_clean_project, mock_find_projects, mock_parse_args):
+        from relm.commands.clean_command import execute as clean_execute
         mock_parse_args.return_value = MagicMock(
             command="clean",
             path=".",
-            project_name="all"
+            project_name="all",
+            func=clean_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         p2 = Project("proj2", "2.0.0", Path("."), "desc")
@@ -418,14 +457,16 @@ class TestMain(unittest.TestCase):
         mock_console.print.assert_any_call(f"Removed 1 artifacts across 2 projects.")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
-    @patch("relm.main.clean_project")
+    @patch("relm.commands.clean_command.find_projects")
+    @patch("relm.commands.clean_command.clean_project")
     @patch("relm.main.console")
     def test_main_clean_single(self, mock_console, mock_clean_project, mock_find_projects, mock_parse_args):
+        from relm.commands.clean_command import execute as clean_execute
         mock_parse_args.return_value = MagicMock(
             command="clean",
             path=".",
-            project_name="proj1"
+            project_name="proj1",
+            func=clean_execute
         )
         p1 = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [p1]
@@ -438,13 +479,15 @@ class TestMain(unittest.TestCase):
         mock_console.rule.assert_called_with("Clean Summary")
 
     @patch("argparse.ArgumentParser.parse_args")
-    @patch("relm.main.find_projects")
+    @patch("relm.commands.clean_command.find_projects")
     @patch("relm.main.console")
     def test_main_clean_project_not_found(self, mock_console, mock_find_projects, mock_parse_args):
+        from relm.commands.clean_command import execute as clean_execute
         mock_parse_args.return_value = MagicMock(
             command="clean",
             path=".",
-            project_name="nonexistent"
+            project_name="nonexistent",
+            func=clean_execute
         )
         mock_find_projects.return_value = []
 
