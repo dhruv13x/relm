@@ -4,39 +4,45 @@ import argparse
 import sys
 from pathlib import Path
 from rich.console import Console
-from rich.table import Table
-from .core import find_projects
-from .release import perform_release
-from .install import install_project
-from .git_ops import is_git_clean, get_current_branch
-from .runner import run_project_command
-from .verify import verify_project_release
-from .clean import clean_project
+
 from .banner import print_logo
+from .commands import (
+    list_command,
+    release_command,
+    install_command,
+    run_command,
+    status_command,
+    verify_command,
+    clean_command,
+)
+
+# Export list_projects for backward compatibility if any tests rely on it,
+# though we should update tests to use the new structure.
+# But looking at tests/test_main.py, it imports list_projects directly.
+# So I will keep a wrapper or move the logic back?
+# No, "The Golden Rule: Functionality MUST remain identical."
+# If I remove `list_projects` from here, tests might break.
+# I should probably update the tests to point to the new location, or re-export it.
+# Re-exporting is safer for now.
+
+from .commands.list_command import execute as _list_execute
+# Adapting old signature to new logic if needed, but wait.
+# The tests import `list_projects` and call it with `path`.
+# The new `execute` takes `args` and `console`.
+# So I cannot simply re-export.
+# I will define a compatibility wrapper.
 
 console = Console()
 
 def list_projects(path: Path):
-    projects = find_projects(path)
-    if not projects:
-        console.print("[yellow]No projects found in this directory.[/yellow]")
-        return
+    """
+    Deprecated: Use commands.list_command.execute instead.
+    Kept for backward compatibility with tests.
+    """
+    # Create a dummy args object
+    args = argparse.Namespace(path=str(path))
+    list_command.execute(args, console)
 
-    table = Table(title=f"Found {len(projects)} Projects")
-    table.add_column("Name", style="cyan", no_wrap=True)
-    table.add_column("Version", style="magenta")
-    table.add_column("Path", style="green")
-    table.add_column("Description")
-
-    for project in projects:
-        table.add_row(
-            project.name,
-            project.version,
-            str(project.path),
-            project.description or ""
-        )
-
-    console.print(table)
 
 def main():
     print_logo()
@@ -51,38 +57,14 @@ def main():
     
     subparsers = parser.add_subparsers(dest="command", required=True)
     
-    # List command
-    list_parser = subparsers.add_parser("list", help="List all discovered projects")
-    
-    # Release command
-    release_parser = subparsers.add_parser("release", help="Release a new version of a project")
-    release_parser.add_argument("project_name", help="Name of the project to release (must match pyproject.toml name)")
-    release_parser.add_argument("type", choices=["major", "minor", "patch", "alpha", "beta", "rc", "release"], default="patch", nargs="?", help="Type of version bump")
-    release_parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompts (assume yes)")
-    release_parser.add_argument("-m", "--message", default="release: bump version to {version}", help="Custom commit message template (e.g., 'chore: release {version}')")
-
-    # Install command
-    install_parser = subparsers.add_parser("install", help="Install projects into the current environment")
-    install_parser.add_argument("project_name", help="Name of the project to install or 'all'")
-    install_parser.add_argument("--no-editable", action="store_true", help="Install in standard mode instead of editable")
-
-    # Run command
-    run_parser = subparsers.add_parser("run", help="Run a shell command across projects")
-    run_parser.add_argument("command_string", help="The shell command to execute")
-    run_parser.add_argument("project_name", nargs="?", default="all", help="Name of the project to run on or 'all'")
-    run_parser.add_argument("--fail-fast", action="store_true", help="Stop execution if a command fails")
-
-    # Status command
-    status_parser = subparsers.add_parser("status", help="Check git status of projects")
-    status_parser.add_argument("project_name", help="Name of the project to check or 'all'", nargs="?", default="all")
-
-    # Verify command
-    verify_parser = subparsers.add_parser("verify", help="Verify if the local release is available on PyPI")
-    verify_parser.add_argument("project_name", help="Name of the project to verify or 'all'", nargs="?", default="all")
-
-    # Clean command
-    clean_parser = subparsers.add_parser("clean", help="Recursively remove build artifacts (dist/, build/, __pycache__)")
-    clean_parser.add_argument("project_name", help="Name of the project to clean or 'all'", nargs="?", default="all")
+    # Register commands
+    list_command.register(subparsers)
+    release_command.register(subparsers)
+    install_command.register(subparsers)
+    run_command.register(subparsers)
+    status_command.register(subparsers)
+    verify_command.register(subparsers)
+    clean_command.register(subparsers)
 
     args = parser.parse_args()
     root_path = Path(args.path).resolve()
@@ -100,230 +82,10 @@ def main():
              if response.lower() != "y":
                  sys.exit(1)
 
-    if args.command == "list":
-        list_projects(root_path)
-    
-    elif args.command == "release":
-        all_projects = find_projects(root_path)
-        
-        target_projects = []
-        check_changes_flag = False
-
-        if args.project_name == "all":
-            target_projects = all_projects
-            check_changes_flag = True
-            console.print(f"[bold]Running Bulk Release on {len(target_projects)} projects...[/bold]")
-        else:
-            # Find single project
-            target = next((p for p in all_projects if p.name == args.project_name), None)
-            if not target:
-                console.print(f"[red]Project '{args.project_name}' not found in {root_path}[/red]")
-                sys.exit(1)
-            target_projects = [target]
-
-        # Execute releases
-        results = {"released": [], "skipped": [], "failed": []}
-
-        for project in target_projects:
-            # Skip template/meta repos if needed, but git_has_changes handles most logic
-            try:
-                success = perform_release(
-                    project, 
-                    args.type, 
-                    yes_mode=args.yes, 
-                    check_changes=check_changes_flag,
-                    commit_template=args.message
-                )
-                if success:
-                    results["released"].append(project.name)
-                else:
-                    results["skipped"].append(project.name)
-            except Exception as e:
-                console.print(f"[red]Critical error releasing {project.name}: {e}[/red]")
-                results["failed"].append(project.name)
-
-        # Summary
-        if args.project_name == "all":
-            console.rule("Bulk Release Summary")
-            console.print(f"[green]Released: {len(results['released'])}[/green] {results['released']}")
-            console.print(f"[yellow]Skipped:  {len(results['skipped'])}[/yellow]")
-            if results["failed"]:
-                console.print(f"[red]Failed:   {len(results['failed'])}[/red] {results['failed']}")
-
-    elif args.command == "install":
-        all_projects = find_projects(root_path)
-        target_projects = []
-
-        if args.project_name == "all":
-            target_projects = all_projects
-            console.print(f"[bold]Bulk Installing {len(target_projects)} projects...[/bold]")
-        else:
-            target = next((p for p in all_projects if p.name == args.project_name), None)
-            if not target:
-                console.print(f"[red]Project '{args.project_name}' not found in {root_path}[/red]")
-                sys.exit(1)
-            target_projects = [target]
-
-        results = {"installed": [], "failed": []}
-        editable_mode = not args.no_editable
-
-        for project in target_projects:
-            success = install_project(project, editable=editable_mode)
-            if success:
-                results["installed"].append(project.name)
-            else:
-                results["failed"].append(project.name)
-        
-        if args.project_name == "all":
-            console.rule("Bulk Install Summary")
-            console.print(f"[green]Installed: {len(results['installed'])}[/green] {results['installed']}")
-            if results["failed"]:
-                console.print(f"[red]Failed:    {len(results['failed'])}[/red] {results['failed']}")
-
-    elif args.command == "run":
-        all_projects = find_projects(root_path)
-        target_projects = []
-
-        if args.project_name == "all":
-            target_projects = all_projects
-            console.print(f"[bold]Running command '{args.command_string}' on {len(target_projects)} projects...[/bold]")
-        else:
-            target = next((p for p in all_projects if p.name == args.project_name), None)
-            if not target:
-                console.print(f"[red]Project '{args.project_name}' not found in {root_path}[/red]")
-                sys.exit(1)
-            target_projects = [target]
-
-        results = {"success": [], "failed": []}
-
-        for project in target_projects:
-            console.rule(f"Running on {project.name}")
-            success = run_project_command(project.path, args.command_string)
-            if success:
-                results["success"].append(project.name)
-            else:
-                results["failed"].append(project.name)
-                if args.fail_fast:
-                    console.print(f"[red]Fail-fast enabled. Stopping execution.[/red]")
-                    break
-        
-        console.rule("Execution Summary")
-        if results["success"]:
-            console.print(f"[green]Success: {len(results['success'])}[/green] {results['success']}")
-        if results["failed"]:
-            console.print(f"[red]Failed:  {len(results['failed'])}[/red] {results['failed']}")
-            sys.exit(1)
-
-    elif args.command == "status":
-        all_projects = find_projects(root_path)
-        target_projects = []
-
-        if args.project_name == "all":
-            target_projects = all_projects
-        else:
-            target = next((p for p in all_projects if p.name == args.project_name), None)
-            if not target:
-                console.print(f"[red]Project '{args.project_name}' not found in {root_path}[/red]")
-                sys.exit(1)
-            target_projects = [target]
-
-        table = Table(title=f"Git Status for {len(target_projects)} Projects")
-        table.add_column("Project", style="cyan", no_wrap=True)
-        table.add_column("Version", style="magenta")
-        table.add_column("Branch", style="blue")
-        table.add_column("Status", style="bold")
-
-        for project in target_projects:
-            branch = get_current_branch(project.path)
-            is_clean = is_git_clean(project.path)
-            
-            status_str = "[green]Clean[/green]" if is_clean else "[red]Dirty[/red]"
-            # Check for potential conflict markers if dirty (simple heuristic) or just leave as Dirty
-            
-            table.add_row(
-                project.name,
-                project.version,
-                branch,
-                status_str
-            )
-
-        console.print(table)
-
-    elif args.command == "verify":
-        all_projects = find_projects(root_path)
-        target_projects = []
-
-        if args.project_name == "all":
-            target_projects = all_projects
-            console.print(f"[bold]Verifying PyPI availability for {len(target_projects)} projects...[/bold]")
-        else:
-            target = next((p for p in all_projects if p.name == args.project_name), None)
-            if not target:
-                console.print(f"[red]Project '{args.project_name}' not found in {root_path}[/red]")
-                sys.exit(1)
-            target_projects = [target]
-
-        results = {"verified": [], "failed": []}
-        
-        table = Table(title=f"PyPI Verification Status for {len(target_projects)} Projects")
-        table.add_column("Project", style="cyan", no_wrap=True)
-        table.add_column("Version", style="magenta")
-        table.add_column("Status", style="bold")
-        table.add_column("Details")
-
-        with console.status(f"[bold green]Verifying {len(target_projects)} projects...[/bold green]"):
-            for project in target_projects:
-                success, message = verify_project_release(project)
-                if success:
-                    results["verified"].append(project.name)
-                    status_str = "[green]Verified[/green]"
-                else:
-                    results["failed"].append(project.name)
-                    status_str = "[red]Failed[/red]"
-                
-                table.add_row(
-                    project.name,
-                    project.version,
-                    status_str,
-                    message
-                )
-        
-        console.print(table)
-        
-        if args.project_name == "all":
-            console.rule("Verification Summary")
-            console.print(f"[green]Verified: {len(results['verified'])}[/green]")
-            if results["failed"]:
-                console.print(f"[red]Failed:   {len(results['failed'])}[/red]")
-
-    elif args.command == "clean":
-        all_projects = find_projects(root_path)
-        target_projects = []
-
-        if args.project_name == "all":
-            target_projects = all_projects
-            console.print(f"[bold]Cleaning workspace for {len(target_projects)} projects...[/bold]")
-        else:
-            target = next((p for p in all_projects if p.name == args.project_name), None)
-            if not target:
-                console.print(f"[red]Project '{args.project_name}' not found in {root_path}[/red]")
-                sys.exit(1)
-            target_projects = [target]
-
-        total_cleaned_paths = 0
-
-        for project in target_projects:
-            cleaned_paths = clean_project(project)
-            if cleaned_paths:
-                total_cleaned_paths += len(cleaned_paths)
-                console.print(f"[green]Cleaned {project.name}:[/green]")
-                for path in cleaned_paths:
-                    console.print(f"  - {path}")
-            else:
-                console.print(f"[dim]Nothing to clean for {project.name}[/dim]")
-
-        console.rule("Clean Summary")
-        console.print(f"Removed {total_cleaned_paths} artifacts across {len(target_projects)} projects.")
+    if hasattr(args, "func"):
+        args.func(args, console)
+    else:
+        parser.print_help()
 
 if __name__ == "__main__":
     main()
