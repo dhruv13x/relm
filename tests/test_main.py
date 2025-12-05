@@ -46,7 +46,8 @@ class TestMain(unittest.TestCase):
             path=".",
             project_name="proj1",
             type="patch",
-            yes=True
+            yes=True,
+            message="release: bump version to {version}"
         )
         project = Project("proj1", "1.0.1", Path("."), "desc")
         mock_find_projects.return_value = [project]
@@ -54,7 +55,13 @@ class TestMain(unittest.TestCase):
 
         main()
 
-        mock_perform_release.assert_called_with(project, "patch", yes_mode=True, check_changes=False)
+        mock_perform_release.assert_called_with(
+            project,
+            "patch",
+            yes_mode=True,
+            check_changes=False,
+            commit_template="release: bump version to {version}"
+        )
 
     @patch("argparse.ArgumentParser.parse_args")
     @patch("relm.main.find_projects")

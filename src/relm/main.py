@@ -58,6 +58,7 @@ def main():
     release_parser.add_argument("project_name", help="Name of the project to release (must match pyproject.toml name)")
     release_parser.add_argument("type", choices=["major", "minor", "patch"], default="patch", nargs="?", help="Type of version bump")
     release_parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompts (assume yes)")
+    release_parser.add_argument("-m", "--message", default="release: bump version to {version}", help="Custom commit message template (e.g., 'chore: release {version}')")
 
     # Install command
     install_parser = subparsers.add_parser("install", help="Install projects into the current environment")
@@ -125,7 +126,8 @@ def main():
                     project, 
                     args.type, 
                     yes_mode=args.yes, 
-                    check_changes=check_changes_flag
+                    check_changes=check_changes_flag,
+                    commit_template=args.message
                 )
                 if success:
                     results["released"].append(project.name)

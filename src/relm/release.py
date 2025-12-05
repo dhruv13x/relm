@@ -45,7 +45,7 @@ def revert_changes(project_path: Path):
     except Exception as e:
         console.print(f"[red]Failed to revert changes: {e}[/red]")
 
-def perform_release(project: Project, part: Literal['major', 'minor', 'patch'], yes_mode: bool = False, check_changes: bool = False) -> bool:
+def perform_release(project: Project, part: Literal['major', 'minor', 'patch'], yes_mode: bool = False, check_changes: bool = False, commit_template: str = "release: bump version to {version}") -> bool:
     console.rule(f"Releasing {project.name}")
     
     # 0. Fetch Tags & Check State
@@ -138,7 +138,8 @@ def perform_release(project: Project, part: Literal['major', 'minor', 'patch'], 
         console.print("[bold blue]Committing...[/bold blue]")
         try:
             git_add(project.path, files_updated)
-            git_commit(project.path, f"release: bump version to {target_version}")
+            commit_message = commit_template.format(version=target_version)
+            git_commit(project.path, commit_message)
         except Exception as e:
             console.print(f"[red]Git commit error: {e}[/red]")
             return False
