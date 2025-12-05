@@ -11,6 +11,7 @@ from rich.prompt import Confirm, Prompt
 from .core import Project
 from .versioning import bump_version_string, update_file_content, update_version_tests
 from .git_ops import is_git_clean, git_add, git_commit, git_tag, git_push, git_fetch_tags, git_tag_exists, git_has_changes
+from .changelog import generate_changelog
 
 console = Console()
 
@@ -122,6 +123,14 @@ def perform_release(project: Project, part: Literal['major', 'minor', 'patch'], 
         if updated_tests:
             console.print(f"[green]Automatically updated version assertions in {len(updated_tests)} test files.[/green]")
             files_updated.extend(updated_tests)
+
+        # Generate Changelog
+        try:
+            console.print("[dim]Generating changelog...[/dim]")
+            generate_changelog(project.path, target_version)
+            files_updated.append("CHANGELOG.md")
+        except Exception as e:
+            console.print(f"[yellow]Warning: Failed to generate changelog: {e}[/yellow]")
 
         if not files_updated:
             console.print("[red]No files were updated! Check version strings.[/red]")

@@ -94,3 +94,22 @@ def get_current_branch(path: Path) -> str:
         return run_git_command(["rev-parse", "--abbrev-ref", "HEAD"], cwd=path)
     except subprocess.CalledProcessError:
         return "unknown"
+
+def get_commit_log(path: Path) -> List[str]:
+    """
+    Returns the list of commit messages since the last tag.
+    """
+    try:
+        # Get the latest tag
+        last_tag = run_git_command(["describe", "--tags", "--abbrev=0"], cwd=path)
+        # Get commits between last tag and HEAD
+        # Format %s returns just the subject
+        log_output = run_git_command(["log", f"{last_tag}..HEAD", "--pretty=format:%s"], cwd=path)
+        return log_output.splitlines()
+    except subprocess.CalledProcessError:
+        # Fallback if no tags exist: return all commits
+        try:
+            log_output = run_git_command(["log", "--pretty=format:%s"], cwd=path)
+            return log_output.splitlines()
+        except subprocess.CalledProcessError:
+            return []

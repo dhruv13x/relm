@@ -25,8 +25,8 @@ This document outlines the strategic vision for `relm`, categorized from foundat
 **Focus**: Feature parity with top competitors, user experience improvements, and robust error handling.
 **Timeline**: Q2
 
-- [ ] **Automated Changelog Generation** - *Parse Conventional Commits to generate/update `CHANGELOG.md`.*
-- [ ] **Configuration File Support** (`.relm.toml`) - *Global configuration to reduce CLI argument repetition.*
+- [x] **Automated Changelog Generation** - *Parse Conventional Commits to generate/update `CHANGELOG.md`.*
+- [x] **Configuration File Support** (`.relm.toml`) - *Global configuration to reduce CLI argument repetition.*
 - [ ] **Dependency Awareness** - *Topological sort for execution (build `lib-a` before `app-b`).*
 - [ ] **"Changed Since" Detection** - *Only run commands on projects modified since the last release (CI optimization).*
 - [ ] **Project Scaffolding** (`relm create`) - *Generate new standard Python projects from templates.*

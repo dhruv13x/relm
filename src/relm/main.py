@@ -6,6 +6,7 @@ from pathlib import Path
 from rich.console import Console
 
 from .banner import print_logo
+from .config import load_config
 from .commands import (
     list_command,
     release_command,
@@ -46,6 +47,14 @@ def list_projects(path: Path):
 
 def main():
     print_logo()
+
+    # Load config early
+    # We don't have args yet, so we assume current dir for config search
+    # or we can do a partial parse?
+    # For now, let's load from CWD
+    cwd = Path.cwd()
+    config = load_config(cwd)
+
     parser = argparse.ArgumentParser(
         description="Manage releases and versioning for local Python projects."
     )
@@ -67,6 +76,11 @@ def main():
     clean_command.register(subparsers)
 
     args = parser.parse_args()
+
+    # Inject config into args
+    # This allows commands to access config via args.config
+    setattr(args, "config", config)
+
     root_path = Path(args.path).resolve()
 
     # Safety check for root directory
