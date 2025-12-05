@@ -2,7 +2,7 @@ import sys
 from argparse import Namespace, _SubParsersAction
 from pathlib import Path
 from rich.console import Console
-from ..core import find_projects
+from ..core import find_projects, sort_projects_by_dependency
 from ..release import perform_release
 
 def register(subparsers: _SubParsersAction):
@@ -23,7 +23,12 @@ def execute(args: Namespace, console: Console):
     check_changes_flag = False
 
     if args.project_name == "all":
-        target_projects = all_projects
+        try:
+            target_projects = sort_projects_by_dependency(all_projects)
+        except ValueError as e:
+            console.print(f"[red]Dependency sorting failed: {e}[/red]")
+            sys.exit(1)
+
         check_changes_flag = True
         console.print(f"[bold]Running Bulk Release on {len(target_projects)} projects...[/bold]")
     else:
