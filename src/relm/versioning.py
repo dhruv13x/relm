@@ -2,40 +2,111 @@
 
 import re
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Optional, Union
+
+# Regex for parsing version strings like "1.0.0", "1.0.0-alpha.1", "1.0.0-rc.2"
+# Supports standard SemVer-ish format: major.minor.patch[-pre.n]
+VERSION_PATTERN = re.compile(
+    r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(?:-(?P<pre_type>[a-zA-Z]+)\.(?P<pre_num>\d+))?$"
+)
+
+class Version:
+    def __init__(self, major: int, minor: int, patch: int, pre_type: Optional[str] = None, pre_num: Optional[int] = None):
+        self.major = major
+        self.minor = minor
+        self.patch = patch
+        self.pre_type = pre_type
+        self.pre_num = pre_num
+
+    def __str__(self):
+        v = f"{self.major}.{self.minor}.{self.patch}"
+        if self.pre_type and self.pre_num is not None:
+            v += f"-{self.pre_type}.{self.pre_num}"
+        return v
+
+    def bump(self, part: str) -> "Version":
+        major, minor, patch = self.major, self.minor, self.patch
+        pre_type, pre_num = self.pre_type, self.pre_num
+
+        if part in ["major", "minor", "patch"]:
+            # Standard semantic versioning bumps reset pre-release information.
+            pre_type = None
+            pre_num = None
+
+            if part == 'major':
+                major += 1
+                minor = 0
+                patch = 0
+            elif part == 'minor':
+                minor += 1
+                patch = 0
+            elif part == 'patch':
+                patch += 1
+
+        elif part in ["alpha", "beta", "rc"]:
+            # Prerelease logic
+            # If we are not in a pre-release, we bump patch and add prerelease
+            if not pre_type:
+                patch += 1
+                pre_type = part
+                pre_num = 1
+            else:
+                if pre_type == part:
+                    # Same prerelease type, increment number
+                    if pre_num is None: pre_num = 1
+                    pre_num += 1
+                else:
+                    # Changing prerelease type (e.g. alpha -> beta)
+                    # Keep same version numbers, just change type and reset num
+                    pre_type = part
+                    pre_num = 1
+
+        elif part == "release":
+            # Strip pre-release info, keeping the same major.minor.patch numbers.
+            # E.g. 1.0.1-rc.1 -> 1.0.1
+            pre_type = None
+            pre_num = None
+
+        else:
+             raise ValueError(f"Invalid bump part: {part}")
+
+        return Version(major, minor, patch, pre_type, pre_num)
+
+def parse_version_object(version: str) -> Version:
+    match = VERSION_PATTERN.match(version)
+    if not match:
+        # Fallback for simple cases like "0.1" -> "0.1.0"
+        if re.match(r"^\d+\.\d+$", version):
+            version += ".0"
+            match = VERSION_PATTERN.match(version)
+
+    if not match:
+        raise ValueError(f"Invalid version format: {version}")
+
+    data = match.groupdict()
+    return Version(
+        int(data['major']),
+        int(data['minor']),
+        int(data['patch']),
+        data.get('pre_type'),
+        int(data['pre_num']) if data.get('pre_num') else None
+    )
 
 def parse_version(version: str) -> Tuple[int, int, int]:
     """
-    Parses a version string 'x.y.z' into a tuple of integers.
+    Legacy support for parse_version. Returns (major, minor, patch).
     """
-    try:
-        parts = version.split('.')
-        if len(parts) < 3:
-            # Handle cases like '0.1' -> '0.1.0'
-            parts.extend(['0'] * (3 - len(parts)))
-        return int(parts[0]), int(parts[1]), int(parts[2])
-    except ValueError:
-        raise ValueError(f"Invalid version format: {version}")
+    v = parse_version_object(version)
+    return v.major, v.minor, v.patch
 
 def bump_version_string(version: str, part: str) -> str:
     """
-    Bumps the version string based on the part ('major', 'minor', 'patch').
+    Bumps the version string based on the part.
+    Supported parts: major, minor, patch, alpha, beta, rc, release
     """
-    major, minor, patch = parse_version(version)
-    
-    if part == 'major':
-        major += 1
-        minor = 0
-        patch = 0
-    elif part == 'minor':
-        minor += 1
-        patch = 0
-    elif part == 'patch':
-        patch += 1
-    else:
-        raise ValueError(f"Invalid bump part: {part}")
-        
-    return f"{major}.{minor}.{patch}"
+    v = parse_version_object(version)
+    new_v = v.bump(part)
+    return str(new_v)
 
 def update_file_content(path: Path, old_version: str, new_version: str) -> bool:
     """
@@ -80,25 +151,11 @@ def update_version_tests(project_path: Path, old_version: str, new_version: str)
     if not tests_dir.exists():
         return updated_files
 
-    # Regex to match: assert ... == "1.2.3" or assert "1.2.3" == ...
-    # We are generous with whitespace
-    # This might need refinement but covers standard cases.
-    # We actually just look for the literal string "1.2.3" inside test files
-    # because replacing it strictly in context is safer than broad replace, 
-    # but parsing python AST is too heavy. 
-    # Let's look for the exact string "old_version" to be safe, 
-    # but only if it looks like a version check? 
-    # actually, if a test file has the version string "1.0.0", it is 99% likely the version check.
-    
     for test_file in tests_dir.rglob("*.py"):
         try:
             content = test_file.read_text(encoding="utf-8")
             if old_version in content:
                 # Check if it's surrounded by quotes to avoid partial matches
-                # e.g. matching "1.0" in "1.0.0" (though old_version is usually full)
-                
-                # Simple string replace for "old_version" -> "new_version"
-                # We use quotes to ensure we match string literals
                 if f'"{old_version}"' in content:
                     new_content = content.replace(f'"{old_version}"', f'"{new_version}"')
                     test_file.write_text(new_content, encoding="utf-8")
