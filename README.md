@@ -73,12 +73,13 @@ relm release my-lib patch
 ## ✨ Key Features
 
 *   **Automated Discovery**: recursively finds all valid Python projects in your workspace.
-*   **Smart Versioning**: Semantically bumps versions (`major`, `minor`, `patch`) in `pyproject.toml` and `__init__.py`.
+*   **Smart Versioning**: Semantically bumps versions (`major`, `minor`, `patch`, `alpha`, `beta`, `rc`) in `pyproject.toml` and `__init__.py`.
 *   **Zero-Config Git Ops**: Auto-stages, commits, and tags releases with clean messages.
 *   **PyPI Publishing**: Builds wheels/sdist and uploads to PyPI automatically.
 *   **Bulk Operations**: **Release, Install, or Check Status of ALL projects at once.**
 *   **Task Runner**: Execute any shell command across your entire suite (`relm run "..."`).
 *   **Workspace Cleaning**: Quickly remove build artifacts (`dist/`, `build/`, `__pycache__`) with `relm clean`.
+*   **PyPI Verification**: **Verify if the locally released version (tag) is available on PyPI with `relm verify`.**
 *   **Developer Friendly**: "Safety checks" prevent running in system roots.
 
 ---
@@ -108,8 +109,8 @@ Installs projects into the current environment.
 Executes a shell command in each project's directory.
 | Argument | Description |
 | :--- | :--- |
-| `command_string` | The command to run (e.g., `"ls -la"`). |
-| `project_name` | Name of the project or `all`. |
+| `command_string` | The shell command to execute (e.g., `"ls -la"`). |
+| `project_name` | Name of the project or `all` (default: `all`). |
 | `--fail-fast` | Stop execution immediately if a command fails. |
 
 #### `status`
@@ -135,8 +136,9 @@ Orchestrates the version bump, build, and publish flow.
 | Argument | Description |
 | :--- | :--- |
 | `project_name` | Name of the project or `all`. |
-| `type` | Bump type: `major`, `minor`, or `patch` (default). |
+| `type` | Bump type: `major`, `minor`, `patch`, `alpha`, `beta`, `rc`, `release`. |
 | `-y`, `--yes` | Skip confirmation prompts. |
+| `-m`, `--message` | Custom commit message template (e.g., `'chore: release {version}'`). |
 
 ---
 
@@ -172,6 +174,8 @@ See [ROADMAP.md](ROADMAP.md) for the detailed vision.
 *   [x] Bulk Release Support
 *   [x] Task Runner (`relm run`)
 *   [x] Project Status (`relm status`)
+*   [x] Pre-release Version Support (`alpha`, `beta`, `rc`)
+*   [x] Custom Commit Messages
 *   [ ] Changelog Generation
 *   [ ] Dependency Graph Awareness
 
