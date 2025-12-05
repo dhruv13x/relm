@@ -17,6 +17,7 @@ This document outlines the strategic vision for `relm`, categorized from foundat
 - [x] **Custom Commit Messages** - *Allow users to customize the release commit message template.*
 - [x] **Pre-release Version Support** - *Support for `alpha`, `beta`, and `rc` suffixes.*
 - [x] **Workspace Cleaning** (`relm clean`) - *Recursively remove build artifacts (`dist/`, `build/`, `__pycache__`).*
+- [x] **PyPI Verification** (`relm verify`) - *Verify if the locally released version (tag) is available on PyPI.*
 
 ---
 
@@ -31,6 +32,7 @@ This document outlines the strategic vision for `relm`, categorized from foundat
 - [ ] **Project Scaffolding** (`relm create`) - *Generate new standard Python projects from templates.*
 - [ ] **Advanced Interactive Mode** - *Guided wizard for releases (selecting version bump, editing notes).*
 - [ ] **Pre-flight Checks** - *Validate credentials, registry access, and environment health before starting.*
+- [ ] **Environment Drift Detection & Sync** - *Check if local environment matches `pyproject.toml` and uninstall extras.*
 
 ---
 
@@ -44,6 +46,8 @@ This document outlines the strategic vision for `relm`, categorized from foundat
 - [ ] **Non-PyPI Index Support** - *First-class support for private registries (Artifactory, Nexus) configuration.*
 - [ ] **Public SDK** - *Stabilize internal APIs (`relm.core`, `relm.git_ops`) for external tool usage.*
 - [ ] **Mixed-Language Monorepo Support** - *Extend discovery to `package.json` (Node) or `go.mod` (Go).*
+- [ ] **Global Lockfile Management** - *Manage a single `uv.lock` or `poetry.lock` for the entire workspace.*
+- [ ] **Container Registry Support** - *Build and push Docker images alongside PyPI releases.*
 
 ---
 
@@ -56,6 +60,7 @@ This document outlines the strategic vision for `relm`, categorized from foundat
 - [ ] **Cross-Repository Dependency Graph** - *Link and manage dependencies across multiple git repositories.*
 - [ ] **"Shadow Release" Mode** - *Simulate a full release (build, publish to local mock registry, install, test) without side effects.*
 - [ ] **Automated Dependency Upgrades** - *Local "Dependabot" that bumps dependencies and runs tests automatically.*
+- [ ] **Supply Chain Security (SBOM)** - *Automatically generate Software Bill of Materials (CycloneDX/SPDX) for releases.*
 
 ---
 
