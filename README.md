@@ -78,6 +78,7 @@ relm release my-lib patch
 *   **PyPI Publishing**: Builds wheels/sdist and uploads to PyPI automatically.
 *   **Bulk Operations**: **Release, Install, or Check Status of ALL projects at once.**
 *   **Task Runner**: Execute any shell command across your entire suite (`relm run "..."`).
+*   **Workspace Cleaning**: Quickly remove build artifacts (`dist/`, `build/`, `__pycache__`) with `relm clean`.
 *   **Developer Friendly**: "Safety checks" prevent running in system roots.
 
 ---
@@ -119,6 +120,12 @@ Shows the Git branch and dirty/clean status for projects.
 
 #### `verify`
 Verifies if the locally released version (tag) is available on PyPI.
+| Argument | Description |
+| :--- | :--- |
+| `project_name` | Name of the project or `all`. |
+
+#### `clean`
+Recursively removes build artifacts (`dist/`, `build/`, `__pycache__`) from projects.
 | Argument | Description |
 | :--- | :--- |
 | `project_name` | Name of the project or `all`. |

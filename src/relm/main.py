@@ -11,6 +11,7 @@ from .install import install_project
 from .git_ops import is_git_clean, get_current_branch
 from .runner import run_project_command
 from .verify import verify_project_release
+from .clean import clean_project
 from .banner import print_logo
 
 console = Console()
@@ -78,6 +79,10 @@ def main():
     # Verify command
     verify_parser = subparsers.add_parser("verify", help="Verify if the local release is available on PyPI")
     verify_parser.add_argument("project_name", help="Name of the project to verify or 'all'", nargs="?", default="all")
+
+    # Clean command
+    clean_parser = subparsers.add_parser("clean", help="Recursively remove build artifacts (dist/, build/, __pycache__)")
+    clean_parser.add_argument("project_name", help="Name of the project to clean or 'all'", nargs="?", default="all")
 
     args = parser.parse_args()
     root_path = Path(args.path).resolve()
@@ -290,6 +295,35 @@ def main():
             console.print(f"[green]Verified: {len(results['verified'])}[/green]")
             if results["failed"]:
                 console.print(f"[red]Failed:   {len(results['failed'])}[/red]")
+
+    elif args.command == "clean":
+        all_projects = find_projects(root_path)
+        target_projects = []
+
+        if args.project_name == "all":
+            target_projects = all_projects
+            console.print(f"[bold]Cleaning workspace for {len(target_projects)} projects...[/bold]")
+        else:
+            target = next((p for p in all_projects if p.name == args.project_name), None)
+            if not target:
+                console.print(f"[red]Project '{args.project_name}' not found in {root_path}[/red]")
+                sys.exit(1)
+            target_projects = [target]
+
+        total_cleaned_paths = 0
+
+        for project in target_projects:
+            cleaned_paths = clean_project(project)
+            if cleaned_paths:
+                total_cleaned_paths += len(cleaned_paths)
+                console.print(f"[green]Cleaned {project.name}:[/green]")
+                for path in cleaned_paths:
+                    console.print(f"  - {path}")
+            else:
+                console.print(f"[dim]Nothing to clean for {project.name}[/dim]")
+
+        console.rule("Clean Summary")
+        console.print(f"Removed {total_cleaned_paths} artifacts across {len(target_projects)} projects.")
 
 if __name__ == "__main__":
     main()
