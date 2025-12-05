@@ -76,6 +76,8 @@ relm release my-lib patch
 *   **Smart Versioning**: Semantically bumps versions (`major`, `minor`, `patch`, `alpha`, `beta`, `rc`) in `pyproject.toml` and `__init__.py`.
 *   **Zero-Config Git Ops**: Auto-stages, commits, and tags releases with clean messages.
 *   **PyPI Publishing**: Builds wheels/sdist and uploads to PyPI automatically.
+*   **Automated Changelog**: Parses Conventional Commits to automatically generate and update `CHANGELOG.md`.
+*   **Configuration**: Supports `.relm.toml` for global configuration.
 *   **Bulk Operations**: **Release, Install, or Check Status of ALL projects at once.**
 *   **Task Runner**: Execute any shell command across your entire suite (`relm run "..."`).
 *   **Workspace Cleaning**: Quickly remove build artifacts (`dist/`, `build/`, `__pycache__`) with `relm clean`.
@@ -176,7 +178,8 @@ See [ROADMAP.md](ROADMAP.md) for the detailed vision.
 *   [x] Project Status (`relm status`)
 *   [x] Pre-release Version Support (`alpha`, `beta`, `rc`)
 *   [x] Custom Commit Messages
-*   [ ] Changelog Generation
+*   [x] Changelog Generation
+*   [x] Configuration File Support
 *   [ ] Dependency Graph Awareness
 
 ---
