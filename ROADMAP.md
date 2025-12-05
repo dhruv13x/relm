@@ -14,7 +14,7 @@ This document outlines the strategic vision for `relm`, categorized from foundat
 - [x] **Git Integration** - *Automated staging, committing, tagging, and pushing.*
 - [x] **Status Reporting** (`relm status`) - *View git status and versions for all projects.*
 - [x] **Comprehensive Unit Tests** - *Existing `tests/` directory and test runners.*
-- [ ] **Custom Commit Messages** - *Allow users to customize the release commit message template.*
+- [x] **Custom Commit Messages** - *Allow users to customize the release commit message template.*
 - [ ] **Pre-release Version Support** - *Support for `alpha`, `beta`, and `rc` suffixes.*
 - [ ] **Workspace Cleaning** (`relm clean`) - *Recursively remove build artifacts (`dist/`, `build/`, `__pycache__`).*
 
