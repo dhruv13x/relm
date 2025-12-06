@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from src.relm.core import Project, sort_projects_by_dependency, load_project
+from relm.core import Project, sort_projects_by_dependency, load_project
 
 def test_load_project_with_dependencies(fs):
     """Test that load_project correctly parses dependencies."""
