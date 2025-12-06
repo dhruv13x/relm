@@ -15,6 +15,7 @@ from .commands import (
     status_command,
     verify_command,
     clean_command,
+    create_command,
 )
 
 # Export list_projects for backward compatibility if any tests rely on it,
@@ -41,7 +42,7 @@ def list_projects(path: Path):
     Kept for backward compatibility with tests.
     """
     # Create a dummy args object
-    args = argparse.Namespace(path=str(path))
+    args = argparse.Namespace(path=str(path), since=None)
     list_command.execute(args, console)
 
 
@@ -74,6 +75,7 @@ def main():
     status_command.register(subparsers)
     verify_command.register(subparsers)
     clean_command.register(subparsers)
+    create_command.register(subparsers)
 
     args = parser.parse_args()
 
