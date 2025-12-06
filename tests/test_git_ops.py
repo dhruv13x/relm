@@ -13,7 +13,10 @@ from relm.git_ops import (
     git_push,
     git_fetch_tags,
     git_tag_exists,
-    git_has_changes
+    git_has_changes,
+    get_current_branch,
+    get_commit_log,
+    git_has_changes_since
 )
 
 class TestGitOps(unittest.TestCase):
@@ -110,6 +113,63 @@ class TestGitOps(unittest.TestCase):
     def test_git_has_changes_true(self, mock_run):
         mock_run.side_effect = subprocess.CalledProcessError(1, "cmd")
         self.assertTrue(git_has_changes(self.path, "v1.0.0"))
+
+    @patch("relm.git_ops.run_git_command")
+    def test_get_current_branch_success(self, mock_run_git):
+        mock_run_git.return_value = "main"
+        branch = get_current_branch(self.path)
+        self.assertEqual(branch, "main")
+        mock_run_git.assert_called_with(["rev-parse", "--abbrev-ref", "HEAD"], cwd=self.path)
+
+    @patch("relm.git_ops.run_git_command")
+    def test_get_current_branch_unknown(self, mock_run_git):
+        mock_run_git.side_effect = subprocess.CalledProcessError(1, "cmd")
+        branch = get_current_branch(self.path)
+        self.assertEqual(branch, "unknown")
+
+    @patch("relm.git_ops.run_git_command")
+    def test_get_commit_log_success(self, mock_run_git):
+        mock_run_git.side_effect = ["v1.0.0", "feat: new feature\nfix: bug fix"]
+        log = get_commit_log(self.path)
+        self.assertEqual(log, ["feat: new feature", "fix: bug fix"])
+        mock_run_git.assert_any_call(["describe", "--tags", "--abbrev=0"], cwd=self.path)
+        mock_run_git.assert_any_call(["log", "v1.0.0..HEAD", "--pretty=format:%s"], cwd=self.path)
+
+    @patch("relm.git_ops.run_git_command")
+    def test_get_commit_log_no_tags(self, mock_run_git):
+        # Simulate 'describe' failing (no tags), then 'log' succeeding
+        def side_effect(args, cwd):
+            if args[0] == "describe":
+                raise subprocess.CalledProcessError(128, "cmd")
+            if args[0] == "log":
+                return "init\nfeat: first"
+            return ""
+
+        mock_run_git.side_effect = side_effect
+        log = get_commit_log(self.path)
+        self.assertEqual(log, ["init", "feat: first"])
+
+    @patch("relm.git_ops.run_git_command")
+    def test_get_commit_log_failure(self, mock_run_git):
+         # Simulate 'describe' failing and 'log' failing
+        mock_run_git.side_effect = subprocess.CalledProcessError(1, "cmd")
+        log = get_commit_log(self.path)
+        self.assertEqual(log, [])
+
+    @patch("subprocess.run")
+    def test_git_has_changes_since_false(self, mock_run):
+        mock_run.return_value = MagicMock(returncode=0)
+        self.assertFalse(git_has_changes_since(self.path, "main"))
+        mock_run.assert_called_with(
+            ["git", "diff", "--quiet", "main", "HEAD", "--", "."],
+            cwd=self.path,
+            check=True
+        )
+
+    @patch("subprocess.run")
+    def test_git_has_changes_since_true(self, mock_run):
+        mock_run.side_effect = subprocess.CalledProcessError(1, "cmd")
+        self.assertTrue(git_has_changes_since(self.path, "main"))
 
 if __name__ == "__main__":
     unittest.main()
