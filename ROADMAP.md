@@ -28,8 +28,8 @@ This document outlines the strategic vision for `relm`, categorized from foundat
 - [x] **Automated Changelog Generation** - *Parse Conventional Commits to generate/update `CHANGELOG.md`.*
 - [x] **Configuration File Support** (`.relm.toml`) - *Global configuration to reduce CLI argument repetition.*
 - [x] **Dependency Awareness** - *Topological sort for execution (build `lib-a` before `app-b`).*
-- [ ] **"Changed Since" Detection** - *Only run commands on projects modified since the last release (CI optimization).*
-- [ ] **Project Scaffolding** (`relm create`) - *Generate new standard Python projects from templates.*
+- [x] **"Changed Since" Detection** - *Only run commands on projects modified since the last release (CI optimization).*
+- [x] **Project Scaffolding** (`relm create`) - *Generate new standard Python projects from templates.*
 - [ ] **Advanced Interactive Mode** - *Guided wizard for releases (selecting version bump, editing notes).*
 - [ ] **Pre-flight Checks** - *Validate credentials, registry access, and environment health before starting.*
 - [ ] **Environment Drift Detection & Sync** - *Check if local environment matches `pyproject.toml` and uninstall extras.*

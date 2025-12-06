@@ -83,6 +83,8 @@ relm release my-lib patch
 *   **Dependency Awareness**: Automatically topological sorts projects during execution (build `lib-a` before `app-b`).
 *   **Workspace Cleaning**: Quickly remove build artifacts (`dist/`, `build/`, `__pycache__`) with `relm clean`.
 *   **PyPI Verification**: **Verify if the locally released version (tag) is available on PyPI with `relm verify`.**
+*   **"Changed Since" Detection**: Only list or act on projects modified since a specific git reference using `--since`.
+*   **Project Scaffolding**: Generate new standard Python projects instantly with `relm create`.
 *   **Developer Friendly**: "Safety checks" prevent running in system roots.
 
 ---
@@ -100,6 +102,16 @@ relm release my-lib patch
 
 #### `list`
 Lists all discovered projects, their versions, and paths.
+| Argument | Description |
+| :--- | :--- |
+| `--since` | List only projects changed since the given git ref (e.g., `HEAD~1`, `main`, `v1.0`). |
+
+#### `create`
+Generates a new standard Python project structure.
+| Argument | Description |
+| :--- | :--- |
+| `name` | Name of the new project. |
+| `path` | Directory to create the project in (default: current directory). |
 
 #### `install`
 Installs projects into the current environment.

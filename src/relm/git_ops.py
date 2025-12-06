@@ -113,3 +113,18 @@ def get_commit_log(path: Path) -> List[str]:
             return log_output.splitlines()
         except subprocess.CalledProcessError:
             return []
+
+def git_has_changes_since(path: Path, ref: str) -> bool:
+    """
+    Checks if there are changes between the given ref and HEAD in the path.
+    Returns True if changes exist, False otherwise.
+    """
+    try:
+        subprocess.run(
+            ["git", "diff", "--quiet", ref, "HEAD", "--", "."],
+            cwd=path,
+            check=True
+        )
+        return False
+    except subprocess.CalledProcessError:
+        return True
