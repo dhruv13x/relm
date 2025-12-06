@@ -80,6 +80,7 @@ relm release my-lib patch
 *   **Configuration**: Supports `.relm.toml` for global configuration.
 *   **Bulk Operations**: **Release, Install, or Check Status of ALL projects at once.**
 *   **Task Runner**: Execute any shell command across your entire suite (`relm run "..."`).
+*   **Dependency Awareness**: Automatically topological sorts projects during execution (build `lib-a` before `app-b`).
 *   **Workspace Cleaning**: Quickly remove build artifacts (`dist/`, `build/`, `__pycache__`) with `relm clean`.
 *   **PyPI Verification**: **Verify if the locally released version (tag) is available on PyPI with `relm verify`.**
 *   **Developer Friendly**: "Safety checks" prevent running in system roots.
@@ -180,7 +181,7 @@ See [ROADMAP.md](ROADMAP.md) for the detailed vision.
 *   [x] Custom Commit Messages
 *   [x] Changelog Generation
 *   [x] Configuration File Support
-*   [ ] Dependency Graph Awareness
+*   [x] Dependency Graph Awareness
 
 ---
 

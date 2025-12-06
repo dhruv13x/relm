@@ -2,7 +2,7 @@ import sys
 from argparse import Namespace, _SubParsersAction
 from pathlib import Path
 from rich.console import Console
-from ..core import find_projects
+from ..core import find_projects, sort_projects_by_dependency
 from ..runner import run_project_command
 
 def register(subparsers: _SubParsersAction):
@@ -20,7 +20,12 @@ def execute(args: Namespace, console: Console):
     target_projects = []
 
     if args.project_name == "all":
-        target_projects = all_projects
+        try:
+            target_projects = sort_projects_by_dependency(all_projects)
+        except ValueError as e:
+            console.print(f"[red]Dependency sorting failed: {e}[/red]")
+            sys.exit(1)
+
         console.print(f"[bold]Running command '{args.command_string}' on {len(target_projects)} projects...[/bold]")
     else:
         target = next((p for p in all_projects if p.name == args.project_name), None)
