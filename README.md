@@ -76,11 +76,11 @@ relm release my-lib patch
 *   **Smart Versioning**: Semantically bumps versions (`major`, `minor`, `patch`, `alpha`, `beta`, `rc`) in `pyproject.toml` and `__init__.py`.
 *   **Zero-Config Git Ops**: Auto-stages, commits, and tags releases with clean messages.
 *   **PyPI Publishing**: Builds wheels/sdist and uploads to PyPI automatically.
-*   **Automated Changelog**: Parses Conventional Commits to automatically generate and update `CHANGELOG.md`.
+*   **Automated Changelog**: **Parses Conventional Commits to automatically generate and update `CHANGELOG.md`.**
 *   **Configuration**: Supports `.relm.toml` for global configuration.
 *   **Bulk Operations**: **Release, Install, or Check Status of ALL projects at once.**
 *   **Task Runner**: Execute any shell command across your entire suite (`relm run "..."`).
-*   **Dependency Awareness**: Automatically topological sorts projects during execution (build `lib-a` before `app-b`).
+*   **Dependency Awareness**: **Automatically topological sorts projects during execution (build `lib-a` before `app-b`).**
 *   **Workspace Cleaning**: Quickly remove build artifacts (`dist/`, `build/`, `__pycache__`) with `relm clean`.
 *   **PyPI Verification**: **Verify if the locally released version (tag) is available on PyPI with `relm verify`.**
 *   **"Changed Since" Detection**: Only list or act on projects modified since a specific git reference using `--since`.
@@ -163,8 +163,13 @@ Orchestrates the version bump, build, and publish flow.
 
 ```text
 src/relm/
+├── commands/        # Modular Command Implementations
+│   ├── base.py      # Abstract base for commands
+│   └── ...          # Individual command modules (list, release, etc.)
 ├── __init__.py      # Package init
 ├── banner.py        # ASCII art logo
+├── changelog.py     # Changelog generation logic
+├── config.py        # Configuration loading (.relm.toml)
 ├── core.py          # Project discovery & parsing logic
 ├── git_ops.py       # Git commands (status, commit, tag, push)
 ├── install.py       # pip installation wrappers
@@ -176,9 +181,9 @@ src/relm/
 ```
 
 ### Logic Flow
-1.  **Discovery**: `main.py` calls `core.py` to map the directory tree.
-2.  **Action**: The user's command (`release`, `install`, etc.) is dispatched to the relevant module.
-3.  **Execution**: Modules like `runner.py` or `git_ops.py` interact with the system shell to perform the work.
+1.  **Discovery**: `main.py` loads configuration and calls `core.py` to map the directory tree.
+2.  **Dispatch**: The `argparse` subparser routes execution to the specific module in `src/relm/commands/`.
+3.  **Execution**: Command modules orchestrate the logic, calling helpers like `runner.py`, `git_ops.py`, or `changelog.py` to interact with the system.
 
 ---
 
