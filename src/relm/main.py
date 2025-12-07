@@ -16,6 +16,7 @@ from .commands import (
     verify_command,
     clean_command,
     create_command,
+    gc_command,
 )
 
 # Export list_projects for backward compatibility if any tests rely on it,
@@ -76,6 +77,7 @@ def main():
     verify_command.register(subparsers)
     clean_command.register(subparsers)
     create_command.register(subparsers)
+    gc_command.register(subparsers)
 
     args = parser.parse_args()
 

@@ -128,3 +128,18 @@ def git_has_changes_since(path: Path, ref: str) -> bool:
         return False
     except subprocess.CalledProcessError:
         return True
+
+def run_git_gc(path: Path):
+    """
+    Runs git gc in the specified directory.
+    """
+    # git gc is verbose on stderr usually, but we want it to just run.
+    # We use check=True to raise error if it fails.
+    # We allow stdout/stderr to pass through if captured by run_git_command or similar,
+    # but here we might want to capture it or just run it.
+    # Using run_git_command which captures output.
+    # But wait, run_git_command returns stdout. git gc often prints to stderr.
+    # Let's use subprocess directly to better control or use run_git_command and ignore output?
+    # run_git_command uses capture_output=True.
+
+    run_git_command(["gc"], cwd=path)
