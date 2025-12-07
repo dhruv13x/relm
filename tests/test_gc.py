@@ -1,10 +1,10 @@
 import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch, call
-from src.relm.commands import gc_command
-from src.relm.core import Project
-from src.relm.gc import gc_project
-from src.relm.git_ops import run_git_gc
+from relm.commands import gc_command
+from relm.core import Project
+from relm.gc import gc_project
+from relm.git_ops import run_git_gc
 import argparse
 
 @pytest.fixture
@@ -33,18 +33,18 @@ def test_register_command():
 
 def test_run_git_gc():
     path = Path("/tmp/repo")
-    with patch("src.relm.git_ops.run_git_command") as mock_run_cmd:
+    with patch("relm.git_ops.run_git_command") as mock_run_cmd:
         run_git_gc(path)
         mock_run_cmd.assert_called_once_with(["gc"], cwd=path)
 
 def test_gc_project_success(mock_project):
-    with patch("src.relm.gc.run_git_gc") as mock_run_gc:
+    with patch("relm.gc.run_git_gc") as mock_run_gc:
         result = gc_project(mock_project)
         assert result is True
         mock_run_gc.assert_called_once_with(mock_project.path)
 
 def test_gc_project_failure(mock_project):
-    with patch("src.relm.gc.run_git_gc") as mock_run_gc:
+    with patch("relm.gc.run_git_gc") as mock_run_gc:
         mock_run_gc.side_effect = Exception("Git error")
         result = gc_project(mock_project)
         assert result is False
@@ -60,8 +60,8 @@ def test_gc_command_all_success(mock_console):
         Project(name="p2", version="1.0", path=Path("/p2")),
     ]
 
-    with patch("src.relm.commands.gc_command.find_projects", return_value=projects), \
-         patch("src.relm.commands.gc_command.gc_project", return_value=True) as mock_gc:
+    with patch("relm.commands.gc_command.find_projects", return_value=projects), \
+         patch("relm.commands.gc_command.gc_project", return_value=True) as mock_gc:
 
         gc_command.execute(args, mock_console)
 
@@ -80,8 +80,8 @@ def test_gc_command_single_success(mock_console):
         Project(name="p2", version="1.0", path=Path("/p2")),
     ]
 
-    with patch("src.relm.commands.gc_command.find_projects", return_value=projects), \
-         patch("src.relm.commands.gc_command.gc_project", return_value=True) as mock_gc:
+    with patch("relm.commands.gc_command.find_projects", return_value=projects), \
+         patch("relm.commands.gc_command.gc_project", return_value=True) as mock_gc:
 
         gc_command.execute(args, mock_console)
 
@@ -97,7 +97,7 @@ def test_gc_command_single_not_found(mock_console):
         Project(name="p1", version="1.0", path=Path("/p1")),
     ]
 
-    with patch("src.relm.commands.gc_command.find_projects", return_value=projects):
+    with patch("relm.commands.gc_command.find_projects", return_value=projects):
         with pytest.raises(SystemExit) as exc:
             gc_command.execute(args, mock_console)
         assert exc.value.code == 1
@@ -114,8 +114,8 @@ def test_gc_command_mixed_results(mock_console):
     ]
 
     # p1 succeeds, p2 fails
-    with patch("src.relm.commands.gc_command.find_projects", return_value=projects), \
-         patch("src.relm.commands.gc_command.gc_project", side_effect=[True, False]):
+    with patch("relm.commands.gc_command.find_projects", return_value=projects), \
+         patch("relm.commands.gc_command.gc_project", side_effect=[True, False]):
 
         gc_command.execute(args, mock_console)
 
@@ -130,8 +130,8 @@ def test_gc_command_single_failure(mock_console):
         Project(name="p1", version="1.0", path=Path("/p1")),
     ]
 
-    with patch("src.relm.commands.gc_command.find_projects", return_value=projects), \
-         patch("src.relm.commands.gc_command.gc_project", return_value=False):
+    with patch("relm.commands.gc_command.find_projects", return_value=projects), \
+         patch("relm.commands.gc_command.gc_project", return_value=False):
 
         with pytest.raises(SystemExit) as exc:
             gc_command.execute(args, mock_console)
