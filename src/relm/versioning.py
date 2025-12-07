@@ -152,6 +152,10 @@ def update_version_tests(project_path: Path, old_version: str, new_version: str)
         return updated_files
 
     for test_file in tests_dir.rglob("*.py"):
+        # Skip this file to prevent modifying its own version assertion tests
+        if test_file.name == "test_versioning.py":
+            continue
+            
         try:
             content = test_file.read_text(encoding="utf-8")
             if old_version in content:
