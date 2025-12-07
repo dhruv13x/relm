@@ -37,7 +37,7 @@ class TestCore(TestCase):
         self.fs.create_file("pyproject.toml", contents='''
 [project]
 name = "root-project"
-version = "3.0.0"
+version = "3.0.1"
 ''')
         self.fs.create_file("subproject1/pyproject.toml", contents='''
 [project]
