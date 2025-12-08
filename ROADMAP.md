@@ -1,72 +1,68 @@
-# 🗺️ relm Smart Roadmap
+# Strategic ROADMAP.md
 
-This document outlines the strategic vision for `relm`, categorized from foundational essentials to "God Level" ambitions. It serves as a living guide for development, prioritizing stability, ecosystem integration, and future-forward capabilities.
-
----
-
-## Phase 1: Foundation (CRITICALLY MUST HAVE)
-**Focus**: Core functionality, stability, security, and basic usage.
-**Timeline**: Q1
-
-- [x] **Project Discovery & Listing** (`relm list`) - *Automatically find projects with `pyproject.toml`.*
-- [x] **Basic Release Flow** (`relm release`) - *Version bumping, tagging, and committing.*
-- [x] **Bulk Operations** - *Release, install, or run commands across all projects at once.*
-- [x] **Git Integration** - *Automated staging, committing, tagging, and pushing.*
-- [x] **Status Reporting** (`relm status`) - *View git status and versions for all projects.*
-- [x] **Comprehensive Unit Tests** - *Existing `tests/` directory and test runners.*
-- [x] **Custom Commit Messages** - *Allow users to customize the release commit message template.*
-- [x] **Pre-release Version Support** - *Support for `alpha`, `beta`, and `rc` suffixes.*
-- [x] **Workspace Cleaning** (`relm clean`) - *Recursively remove build artifacts (`dist/`, `build/`, `__pycache__`).*
-- [x] **PyPI Verification** (`relm verify`) - *Verify if the locally released version (tag) is available on PyPI.*
+This is a living document that balances **Innovation**, **Stability**, and **Debt**.
 
 ---
 
-## Phase 2: The Standard (MUST HAVE)
-**Focus**: Feature parity with top competitors, user experience improvements, and robust error handling.
-**Timeline**: Q2
-
-- [x] **Automated Changelog Generation** - *Parse Conventional Commits to generate/update `CHANGELOG.md`.*
-- [x] **Configuration File Support** (`.relm.toml`) - *Global configuration to reduce CLI argument repetition.*
-- [x] **Dependency Awareness** - *Topological sort for execution (build `lib-a` before `app-b`).*
-- [x] **"Changed Since" Detection** - *Only run commands on projects modified since the last release (CI optimization).*
-- [x] **Project Scaffolding** (`relm create`) - *Generate new standard Python projects from templates.*
-- [ ] **Advanced Interactive Mode** - *Guided wizard for releases (selecting version bump, editing notes).*
-- [ ] **Pre-flight Checks** - *Validate credentials, registry access, and environment health before starting.*
-- [ ] **Environment Drift Detection & Sync** - *Check if local environment matches `pyproject.toml` and uninstall extras.*
+## The "Strategic Roadmap" Strategy V3:
+1.  **Prioritization**: Value vs. Effort Matrix.
+2.  **Risk Assessment**: High/Medium/Low risk for each feature.
+3.  **Dependencies**: Phase 2 requires Phase 1.
 
 ---
 
-## Phase 3: The Ecosystem (INTEGRATION & SHOULD HAVE)
-**Focus**: Webhooks, API exposure, 3rd party plugins, SDK generation, and extensibility.
-**Timeline**: Q3
+## 🏁 Phase 0: The Core (Stability & Debt)
+**Goal**: Solid foundation.
+**Focus**: Testing, CI/CD, Documentation, Refactoring.
 
-- [ ] **CI/CD Platform Integration** - *Native support for generating GitHub Actions/GitLab CI workflows.*
-- [ ] **Webhook Notifications** - *Post to Slack/Discord/Teams upon successful or failed releases.*
-- [ ] **Plugin Architecture** - *Hooks for custom build steps (e.g., "run this script before tagging").*
-- [ ] **Non-PyPI Index Support** - *First-class support for private registries (Artifactory, Nexus) configuration.*
-- [ ] **Public SDK** - *Stabilize internal APIs (`relm.core`, `relm.git_ops`) for external tool usage.*
-- [ ] **Mixed-Language Monorepo Support** - *Extend discovery to `package.json` (Node) or `go.mod` (Go).*
-- [ ] **Global Lockfile Management** - *Manage a single `uv.lock` or `poetry.lock` for the entire workspace.*
-- [ ] **Container Registry Support** - *Build and push Docker images alongside PyPI releases.*
+- [x] **Testing**: Coverage > 80% `[Debt]` (Current: 85%)
+- [x] **CI/CD**: Linting (Ruff), Type Checking (Mypy) `[Debt]`
+- [x] **Documentation**: Comprehensive README `[Docs]`
+- [ ] **Refactoring**: Pay down critical technical debt `[Debt]` (Size: L)
 
----
+## 🚀 Phase 1: The Standard (Feature Parity)
+**Goal**: Competitiveness.
+**Focus**: UX, Config, Performance.
+**Risk**: Low.
 
-## Phase 4: The Vision (GOD LEVEL)
-**Focus**: "Futuristic" features, AI integration, advanced automation, and industry-disrupting capabilities.
-**Timeline**: Q4
+- [ ] **Advanced Interactive Mode** `[Feat]` (Size: M)
+    - Guided wizard for releases (selecting version bump, editing notes).
+- [ ] **Pre-flight Checks** `[Feat]` (Size: S)
+    - Validate credentials, registry access, and environment health.
+- [ ] **Environment Drift Detection** `[Feat]` (Size: M)
+    - Check if local environment matches `pyproject.toml`.
+- [ ] **UX Improvements** `[Feat]` (Size: S)
+    - CLI improvements, Error messages.
+- [ ] **Performance Tuning** `[Feat]` (Size: M)
+    - Async operations, caching optimization.
 
-- [ ] **AI-Powered Release Notes** - *Use LLMs to summarize code diffs into human-readable release notes.*
-- [ ] **Predictive Release Scheduling** - *Analyze commit velocity to suggest optimal release windows.*
-- [ ] **Cross-Repository Dependency Graph** - *Link and manage dependencies across multiple git repositories.*
-- [ ] **"Shadow Release" Mode** - *Simulate a full release (build, publish to local mock registry, install, test) without side effects.*
-- [ ] **Automated Dependency Upgrades** - *Local "Dependabot" that bumps dependencies and runs tests automatically.*
-- [ ] **Supply Chain Security (SBOM)** - *Automatically generate Software Bill of Materials (CycloneDX/SPDX) for releases.*
+## 🔌 Phase 2: The Ecosystem (Integration)
+**Goal**: Interoperability.
+**Focus**: API, Plugins, Integrations.
+**Risk**: Medium (Requires API design freeze).
+**Dependencies**: Requires Phase 1.
 
----
+- [ ] **CI/CD Platform Integration** `[Feat]` (Size: L)
+    - Native support for GitHub Actions/GitLab CI.
+- [ ] **Webhook Notifications** `[Feat]` (Size: S)
+    - Slack/Discord/Teams integration.
+- [ ] **Plugin Architecture** `[Feat]` (Size: XL)
+    - Hooks for custom build steps.
+- [ ] **Non-PyPI Index Support** `[Feat]` (Size: M)
+    - Private registries (Artifactory, Nexus).
+- [ ] **Public SDK** `[Feat]` (Size: L)
+    - Stabilize internal APIs for external use.
 
-## The Sandbox (OUT OF THE BOX / OPTIONAL)
-**Focus**: Wild, creative, experimental ideas that set the project apart.
+## 🔮 Phase 3: The Vision (Innovation)
+**Goal**: Market Leader.
+**Focus**: AI, Cloud, Advanced Automation.
+**Risk**: High (R&D).
 
-- [ ] **Voice Control** - *"Hey relm, ship it to production."*
-- [ ] **IoT Integration** - *Flash smart lights red on build failure, green on release success.*
-- [ ] **Gamification** - *Leaderboards and achievements for release frequency and quality.*
+- [ ] **AI-Powered Release Notes** `[Feat]` (Size: L)
+    - LLM Integration for diff summarization.
+- [ ] **Predictive Release Scheduling** `[Feat]` (Size: XL)
+    - Analyze commit velocity.
+- [ ] **Cross-Repository Graph** `[Feat]` (Size: XL)
+    - Dependency management across git repos.
+- [ ] **Cloud Integration** `[Feat]` (Size: L)
+    - K8s/Docker container registry support.
