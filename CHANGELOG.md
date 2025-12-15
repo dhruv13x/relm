@@ -1,5 +1,9 @@
 # Changelog
 
+## [3.0.2] - 2025-12-15
+### Documentation
+- update README.md to Gold Standard format (#20)
+
 ## [3.0.1] - 2025-12-07
 ### Other Changes
 - Make test_perform_release_custom_message dynamic
