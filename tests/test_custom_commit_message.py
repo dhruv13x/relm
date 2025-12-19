@@ -32,7 +32,7 @@ class TestCustomCommitMessage(unittest.TestCase):
         # Setup mocks for a successful release flow
         mock_is_clean.return_value = True
         mock_tag_exists.side_effect = [True, False] # Already tagged? Yes. New tag exists? No.
-        mocked_new_version = "3.0.2" # This will be the mocked new version
+        mocked_new_version = "4.0.0" # This will be the mocked new version
         mock_bump.return_value = mocked_new_version
         mock_update_file.return_value = True
         mock_update_tests.return_value = []

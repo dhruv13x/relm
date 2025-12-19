@@ -1,3 +1,3 @@
 # src/relm/__init__.py
 
-__version__ = "3.0.2"
+__version__ = "4.0.0"

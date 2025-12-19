@@ -12,7 +12,7 @@ class TestVerify(unittest.TestCase):
     def setUp(self):
         self.project = Project(
             name="test-project",
-            version="3.0.2",
+            version="4.0.0",
             path=Path("/tmp/test_project"),
             description="Test project"
         )
