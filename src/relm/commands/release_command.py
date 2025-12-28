@@ -1,3 +1,4 @@
+import argparse
 import sys
 from argparse import Namespace, _SubParsersAction
 from pathlib import Path
@@ -5,9 +6,9 @@ from rich.console import Console
 from ..core import find_projects, sort_projects_by_dependency
 from ..release import perform_release
 
-def register(subparsers: _SubParsersAction):
+def register(subparsers: _SubParsersAction, base_parser: argparse.ArgumentParser):
     """Register the release command."""
-    release_parser = subparsers.add_parser("release", help="Release a new version of a project")
+    release_parser = subparsers.add_parser("release", help="Release a new version of a project", parents=[base_parser])
     release_parser.add_argument("project_name", help="Name of the project to release (must match pyproject.toml name)")
     release_parser.add_argument("type", choices=["major", "minor", "patch", "alpha", "beta", "rc", "release"], default="patch", nargs="?", help="Type of version bump")
     release_parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompts (assume yes)")
@@ -17,7 +18,11 @@ def register(subparsers: _SubParsersAction):
 def execute(args: Namespace, console: Console):
     """Execute the release command."""
     root_path = Path(args.path).resolve()
-    all_projects = find_projects(root_path)
+    all_projects = find_projects(
+        root_path,
+        recursive=getattr(args, "recursive", False),
+        max_depth=getattr(args, "depth", 2)
+    )
 
     target_projects = []
     check_changes_flag = False

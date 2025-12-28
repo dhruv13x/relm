@@ -17,6 +17,7 @@ from .commands import (
     clean_command,
     create_command,
     gc_command,
+    pytest_command,
 )
 
 # Export list_projects for backward compatibility if any tests rely on it,
@@ -57,29 +58,77 @@ def main():
     cwd = Path.cwd()
     config = load_config(cwd)
 
-    parser = argparse.ArgumentParser(
-        description="Manage releases and versioning for local Python projects."
-    )
-    parser.add_argument(
+    # Base parser for shared arguments
+    base_parser = argparse.ArgumentParser(add_help=False)
+    base_parser.add_argument(
         "--path",
         default=".",
         help="Path to the root directory containing projects (default: current dir)."
     )
+    base_parser.add_argument(
+        "--recursive", "-r",
+        action="store_true",
+        help="Recursively scan for projects in subdirectories."
+    )
+    base_parser.add_argument(
+        "--depth", "-d",
+        type=int,
+        default=2,
+        help="Maximum depth to scan when recursive is enabled (default: 2)."
+    )
+    base_parser.add_argument(
+        "--parallel", "-p",
+        action="store_true",
+        help="Run commands in parallel across projects."
+    )
+    base_parser.add_argument(
+        "--jobs", "-j",
+        type=int,
+        default=None,
+        help="Number of parallel jobs (default: number of CPUs)."
+    )
+    base_parser.add_argument(
+        "--from-root",
+        action="store_true",
+        help="Run commands from the current working directory instead of project directories."
+    )
+
+    parser = argparse.ArgumentParser(
+        description="Manage releases and versioning for local Python projects.",
+        parents=[base_parser]
+    )
     
     subparsers = parser.add_subparsers(dest="command", required=True)
     
-    # Register commands
-    list_command.register(subparsers)
-    release_command.register(subparsers)
-    install_command.register(subparsers)
-    run_command.register(subparsers)
-    status_command.register(subparsers)
-    verify_command.register(subparsers)
-    clean_command.register(subparsers)
-    create_command.register(subparsers)
-    gc_command.register(subparsers)
+    # We pass the base_parser to commands if they need to inherit it
+    # or just use it in the registration process.
+    # However, to allow the flags AFTER the command, the subparser itself needs them.
+    # So we define a function to register with inheritance.
 
-    args = parser.parse_args()
+    def add_cmd(name, help_text):
+        return subparsers.add_parser(name, help=help_text, parents=[base_parser])
+
+    # Each register function now needs to be aware or we just update the register calls.
+    # Let's see how register is defined in commands.
+    # e.g. list_command.register(subparsers)
+    
+    # Register commands
+    list_command.register(subparsers, base_parser)
+    release_command.register(subparsers, base_parser)
+    install_command.register(subparsers, base_parser)
+    run_command.register(subparsers, base_parser)
+    status_command.register(subparsers, base_parser)
+    verify_command.register(subparsers, base_parser)
+    clean_command.register(subparsers, base_parser)
+    create_command.register(subparsers, base_parser)
+    gc_command.register(subparsers, base_parser)
+    pytest_command.register(subparsers, base_parser)
+
+    args, unknown = parser.parse_known_args()
+
+    # Inject unknown args if we want? No, execute() manually checks sys.argv
+    # or we can pass unknown to the command.
+    # For now, let's just make sure it doesn't crash.
 
     # Inject config into args
     # This allows commands to access config via args.config

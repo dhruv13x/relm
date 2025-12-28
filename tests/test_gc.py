@@ -21,14 +21,21 @@ def mock_project():
     )
 
 def test_register_command():
+
     subparsers = MagicMock()
+
     parser_mock = MagicMock()
+
     subparsers.add_parser.return_value = parser_mock
 
-    gc_command.register(subparsers)
+    base_parser = MagicMock()
 
-    subparsers.add_parser.assert_called_once_with("gc", help="Run git gc on project(s)")
-    parser_mock.add_argument.assert_called_once_with("project_name", help="Name of the project to clean or 'all'", nargs="?", default="all")
+    gc_command.register(subparsers, base_parser)
+
+    subparsers.add_parser.assert_called_once_with("gc", help="Run git gc on project(s)", parents=[base_parser])
+
+
+    parser_mock.add_argument.assert_called_once_with("project_name", help="Name of the project to gc or 'all'", nargs="?", default="all")
     parser_mock.set_defaults.assert_called_once_with(func=gc_command.execute)
 
 def test_run_git_gc():

@@ -1,3 +1,4 @@
+import argparse
 import sys
 from argparse import Namespace, _SubParsersAction
 from pathlib import Path
@@ -5,10 +6,10 @@ from rich.console import Console
 from ..core import find_projects
 from ..gc import gc_project
 
-def register(subparsers: _SubParsersAction):
+def register(subparsers: _SubParsersAction, base_parser: argparse.ArgumentParser):
     """Register the gc command."""
-    gc_parser = subparsers.add_parser("gc", help="Run git gc on project(s)")
-    gc_parser.add_argument("project_name", help="Name of the project to clean or 'all'", nargs="?", default="all")
+    gc_parser = subparsers.add_parser("gc", help="Run git gc on project(s)", parents=[base_parser])
+    gc_parser.add_argument("project_name", help="Name of the project to gc or 'all'", nargs="?", default="all")
     gc_parser.set_defaults(func=execute)
 
 def execute(args: Namespace, console: Console):

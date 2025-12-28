@@ -68,13 +68,30 @@ def test_topological_sort_diamond(fs):
     assert set(names[1:3]) == {"B", "C"}
 
 def test_topological_sort_circular_dependency():
-    """Test that circular dependencies raise an error."""
-    # A -> B -> A
+
     p_a = Project(name="A", version="1.0", path=Path("/a"), dependencies=["B"])
+
     p_b = Project(name="B", version="1.0", path=Path("/b"), dependencies=["A"])
 
-    with pytest.raises(ValueError, match="Circular dependency"):
-        sort_projects_by_dependency([p_a, p_b])
+    
+
+    # Now it should NOT raise ValueError, but return both projects
+
+    projects = [p_a, p_b]
+
+    sorted_projects = sort_projects_by_dependency(projects)
+
+    
+
+    assert len(sorted_projects) == 2
+
+    names = [p.name for p in sorted_projects]
+
+    assert "A" in names
+
+    assert "B" in names
+
+
 
 def test_sort_with_external_dependencies():
     """

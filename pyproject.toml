@@ -37,7 +37,8 @@ dependencies = [
   "rich>=13.0.0",
   "rich-argparse>=1.0.0",
   "build>=1.0.0",
-  "twine>=4.0.0"
+  "twine>=4.0.0",
+  "pyfakefs>=5.10.2",
 ]
 
 [project.urls]

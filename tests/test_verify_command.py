@@ -27,7 +27,7 @@ class TestVerifyCommand(unittest.TestCase):
         execute(self.args, self.console)
 
         # Check find_projects called with correct path
-        mock_find.assert_called_with(self.root_path)
+        mock_find.assert_called_with(self.root_path, recursive=False, max_depth=2)
 
         # Check verify calls
         self.assertEqual(mock_verify.call_count, 2)
@@ -64,7 +64,7 @@ class TestVerifyCommand(unittest.TestCase):
             execute(self.args, self.console)
 
         self.assertEqual(cm.exception.code, 1)
-        self.console.print.assert_called_with(f"[red]Project 'nonexistent' not found in {self.root_path}[/red]")
+        self.console.print.assert_called_with(f"[red]Project or folder 'nonexistent' not found in {self.root_path}[/red]")
 
     @patch("relm.commands.verify_command.find_projects")
     @patch("relm.commands.verify_command.verify_project_release")

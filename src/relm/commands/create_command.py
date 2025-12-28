@@ -1,14 +1,13 @@
+import argparse
 import os
 from argparse import Namespace, _SubParsersAction
 from pathlib import Path
 from rich.console import Console
 
-def register(subparsers: _SubParsersAction):
+def register(subparsers: _SubParsersAction, base_parser: argparse.ArgumentParser):
     """Register the create command."""
-    parser = subparsers.add_parser("create", help="Create a new Python project")
-    parser.add_argument("name", help="Name of the project")
-    parser.add_argument("path", nargs="?", help="Directory to create the project in (defaults to current directory)")
-    parser.set_defaults(func=execute)
+    create_parser = subparsers.add_parser("create", help="Create a new Python project", parents=[base_parser])
+    create_parser.add_argument("name", help="Name of the new project")
 
 def execute(args: Namespace, console: Console):
     """Execute the create command."""

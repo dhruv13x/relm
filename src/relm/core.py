@@ -75,40 +75,49 @@ def load_project(path: Path) -> Optional[Project]:
     
     return None
 
-def find_projects(root_path: Path) -> List[Project]:
+def find_projects(root_path: Path, recursive: bool = False, max_depth: int = 1) -> List[Project]:
     """
-    Scans the immediate subdirectories of root_path for valid projects.
+    Scans root_path for valid projects. 
+    If recursive is False, only scans root and immediate subdirectories (depth 1).
+    If recursive is True, scans up to max_depth.
     """
     projects = []
     if not root_path.exists() or not root_path.is_dir():
         return projects
 
-    # Check if the root itself is a project
-    root_project = load_project(root_path)
-    if root_project:
-        projects.append(root_project)
+    IGNORE_DIRS = {
+        "node_modules", "venv", ".venv", "env", ".env", "dist", "build", ".git",
+        "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache", "site-packages"
+    }
 
-    # Safety: Cap the number of directories we scan to prevent hanging on massive folders
-    # or accidental runs in root.
-    MAX_SCANNED_DIRS = 100
-    scanned_count = 0
+    root_path = root_path.resolve()
 
-    # Check subdirectories
-    for item in root_path.iterdir():
-        if scanned_count > MAX_SCANNED_DIRS:
-            break
+    for root, dirs, files in os.walk(root_path):
+        current_path = Path(root).resolve()
+        
+        try:
+            rel_path = current_path.relative_to(root_path)
+            current_depth = len(rel_path.parts)
+        except ValueError:
+            continue
 
-        if item.is_dir() and item != root_path:
-            scanned_count += 1
-            
-            # Avoid recursing too deep or checking hidden dirs for now
-            if item.name.startswith("."):
+        # Filter directories in-place to prevent recursion into ignored folders
+        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS and not d.startswith(".")]
+
+        # Stop recursion if we exceed max_depth
+        if not recursive and current_depth >= 1:
+            dirs[:] = []
+            if current_depth > 1:
                 continue
-            
-            project = load_project(item)
+        
+        if recursive and current_depth >= max_depth:
+            dirs[:] = []
+        
+        if "pyproject.toml" in files:
+            project = load_project(current_path)
             if project:
                 projects.append(project)
-    
+
     return sorted(projects, key=lambda p: p.name)
 
 def sort_projects_by_dependency(projects: List[Project]) -> List[Project]:
@@ -151,7 +160,11 @@ def sort_projects_by_dependency(projects: List[Project]) -> List[Project]:
 
     def visit(n: str):
         if n in temp_marked:
-            raise ValueError(f"Circular dependency detected involving {n}")
+            # Instead of raising ValueError, we'll just log a warning and break the cycle
+            # This is less "correct" but more "useful" for complex monorepos.
+            from rich.console import Console
+            Console().print(f"[yellow]⚠️  Warning: Circular dependency detected involving {n}. Sorting may be non-deterministic for this cluster.[/yellow]")
+            return
         if n in visited:
             return
 
