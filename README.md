@@ -60,14 +60,14 @@ Copy-paste this snippet to see `relm` in action (assumes you have a Python proje
 # 1. List all projects and their current versions
 relm list
 
-# 2. Check git status across the entire workspace
-relm status all
+# 2. Check git status across the entire workspace recursively
+relm status all -r
 
-# 3. Install all projects in editable mode
-relm install all
+# 3. Install all projects in editable mode in parallel
+relm install all -p
 
-# 4. Run tests across all projects (stops on first failure)
-relm run "pytest" all --fail-fast
+# 4. Run tests in parallel across all projects in the 'packages' folder
+relm pytest packages -p --from-root
 
 # 5. Release a patch version for a specific library
 relm release my-library patch
@@ -78,20 +78,21 @@ relm release my-library patch
 ## ✨ Features (The "Why")
 
 ### Core
-*   **Automated Discovery**: Recursively scans and identifies Python projects (`pyproject.toml`) in your workspace.
+*   **Automated Discovery**: Recursively scans and identifies Python projects (`pyproject.toml`) in your workspace with configurable depth.
 *   **Smart Versioning**: Semantically bumps versions (`major`, `minor`, `patch`, `alpha`, `beta`, `rc`) and updates files automatically.
 *   **Zero-Config Git Ops**: Auto-stages, commits, tags, and pushes releases with standardized messages.
 
 ### Performance & Workflow
-*   **Bulk Operations**: **Install, Test, or Release ALL projects** with a single command.
-*   **Dependency Awareness**: **Topologically sorts projects** to ensure correct build order (build `lib-a` before `app-b`).
-*   **"Changed Since" Detection**: Filter operations to only target projects modified since a specific git reference (`--since`).
+*   **High-Performance Parallelism**: Execute `pytest`, `install`, or `run` commands concurrently across projects while respecting the dependency graph.
+*   **Path-Based Targeting**: Target operations at specific folders (e.g., `relm pytest packages`) or the entire workspace.
+*   **Dependency Awareness**: **Topologically sorts projects** to ensure correct build order, with lenient handling for circular dependencies.
+*   **"From Root" Execution**: Seamlessly run commands from the workspace root to avoid monorepo import issues.
 *   **Workspace Cleaning**: Instantly wipe `dist/`, `build/`, and `__pycache__` artifacts with `relm clean`.
 
 ### Automation & Security
 *   **Automated Changelog**: **Parses Conventional Commits** to auto-generate `CHANGELOG.md`.
 *   **PyPI Publishing**: seamless build and upload workflow.
-*   **PyPI Verification**: Verify local tags match PyPI releases with `relm verify`.
+*   **Memory-Safe Logging**: Captures only the "tail" of logs during parallel execution to prevent terminal crashes on massive monorepos.
 *   **Safety Checks**: Prevents accidental execution in system roots.
 
 ---
@@ -111,22 +112,28 @@ relm release my-library patch
 ### CLI Arguments
 
 **Global Options**
-| Flag | Description |
-| :--- | :--- |
-| `--path` | Root directory to scan for projects (default: `.`) |
+| Flag | Shortcut | Description |
+| :--- | :--- | :--- |
+| `--path` | N/A | Root directory to scan for projects (default: `.`) |
+| `--recursive` | `-r` | Recursively scan for projects in subdirectories. |
+| `--depth` | `-d` | Maximum depth to scan when recursive is enabled (default: 2). |
+| `--parallel` | `-p` | Run commands in parallel across projects. |
+| `--jobs` | `-j` | Number of parallel jobs (default: number of CPUs). |
+| `--from-root` | N/A | Run commands from the CWD instead of project directories. |
 
 **Commands**
 | Command | Arguments | Description |
 | :--- | :--- | :--- |
 | `list` | `--since <ref>` | List projects (optionally filtered by changes since git ref). |
-| `status` | `project_name` | Show git branch and dirty status. |
-| `install` | `project_name`, `--no-editable` | Install projects (default: editable). |
-| `run` | `command`, `project_name`, `--fail-fast` | Execute shell command in project directories. |
+| `status` | `project_or_path` | Show git branch and dirty status. |
+| `install` | `project_or_path`, `--no-editable` | Install projects (default: editable). |
+| `pytest` | `project_or_path`, `--fail-fast`, `-- <args>` | Run pytest across projects and summarize results. |
+| `run` | `command`, `project_or_path`, `--fail-fast` | Execute shell command in project directories. |
 | `release` | `project`, `type`, `-y`, `-m` | Bump version, tag, and publish. Type: `major`, `minor`, `patch`, etc. |
-| `clean` | `project_name` | Remove build artifacts. |
+| `clean` | `project_or_path` | Remove build artifacts. |
 | `create` | `name`, `path` | Scaffold a new project. |
-| `verify` | `project_name` | Verify PyPI release availability. |
-| `gc` | N/A | Run `git gc` on all projects. |
+| `verify` | `project_or_path` | Verify PyPI release availability. |
+| `gc` | `project_or_path` | Run `git gc` on projects. |
 
 ---
 
@@ -138,10 +145,11 @@ relm release my-library patch
 ```text
 src/relm/
 ├── commands/           # 🔌 Pluggable Command Modules
-│   ├── list_command.py
+│   ├── pytest_command.py
 │   ├── release_command.py
 │   └── ...
 ├── core.py             # 🧠 Project Model & Dependency Graph
+├── runner.py           # ⚡ Parallel Task Execution Engine
 ├── config.py           # ⚙️ Configuration Loader (.relm.toml)
 ├── git_ops.py          # 🐙 Git Wrapper
 ├── release.py          # 🚀 Release Workflow Engine
@@ -154,8 +162,8 @@ src/relm/
 ### Data Flow
 1.  **Discovery**: `main.py` bootstraps and calls `core.py` to recursively find `pyproject.toml` files.
 2.  **Graph Construction**: Projects are parsed into `Project` objects; dependencies are mapped.
-3.  **Topological Sort**: For bulk operations (`install`, `run`), projects are ordered so dependencies are processed first.
-4.  **Execution**: The appropriate `command` module is invoked, orchestrating `git_ops`, `subprocess` calls, or file manipulations.
+3.  **Topological Sort**: Projects are ordered so dependencies are processed first (with cycle-breaking logic).
+4.  **Execution**: The `runner.py` engine orchestrates execution (sequential or parallel), capturing truncated logs for safety.
 
 ---
 
@@ -166,24 +174,18 @@ src/relm/
 | :--- | :--- | :--- |
 | `Project 'xyz' not found` | The project is not in the scan path. | Ensure `--path` is correct and `pyproject.toml` exists. |
 | `Git repository is not clean` | Uncommitted changes exist. | Commit or stash changes before releasing. |
-| `Circular dependency detected` | Projects depend on each other. | Refactor dependencies to be acyclic. |
+| `Circular dependency detected` | Projects depend on each other. | relm will warn and continue, but check your dependencies. |
 | `Running in system root` | Executing from `/` or similar. | Navigate to your workspace folder or use `--path`. |
 
 ### Debug Mode
-`relm` uses `rich` for output. While there is no dedicated `--debug` flag, exceptions are printed with tracebacks on failure.
-Check `pyproject.toml` for `log_cli = true` to enable verbose logging during test runs (`relm run "pytest"`).
+`relm` uses `rich` for output. Exceptions are printed with tracebacks on failure.
+In parallel mode, full output is only shown for failed projects (truncated to the last 50 lines).
 
 ---
 
 ## 🤝 Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-### Dev Setup
-1.  Clone the repo.
-2.  Install dependencies: `pip install .[dev]`.
-3.  Run tests: `pytest`.
-4.  Linting: `ruff check .` and `black .`.
 
 ---
 
@@ -198,7 +200,8 @@ See [ROADMAP.md](ROADMAP.md) for the full vision.
 *   [x] Automated Changelog Generation
 *   [x] Configuration File Support (`.relm.toml`)
 *   [x] Dependency Graph Awareness
-*   [ ] Parallel execution for `run` and `install`
+*   [x] Parallel execution for `run`, `install`, and `pytest`
+*   [x] Recursive project discovery
 *   [ ] Interactive mode for project selection
 *   [ ] Docker container support
 *   [ ] CI/CD Integration templates
