@@ -1,5 +1,7 @@
 # Changelog
 
+## [5.0.0] - 2025-12-28
+
 ## [4.0.0] - 2025-12-19
 ### Other Changes
 - update

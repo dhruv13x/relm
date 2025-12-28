@@ -15,7 +15,7 @@ class TestVerifyCommand(unittest.TestCase):
         self.root_path = Path("/tmp/test_root").resolve()
 
         self.project1 = Project(name="proj1", version="1.0.0", path=self.root_path / "proj1", description="")
-        self.project2 = Project(name="proj2", version="4.0.0", path=self.root_path / "proj2", description="")
+        self.project2 = Project(name="proj2", version="5.0.0", path=self.root_path / "proj2", description="")
 
     @patch("relm.commands.verify_command.find_projects")
     @patch("relm.commands.verify_command.verify_project_release")
