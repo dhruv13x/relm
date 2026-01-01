@@ -15,11 +15,16 @@ from .core import Project
 
 console = Console()
 
-def run_project_command_tail(project_path: Path, command: str, tail_lines: int = 50, timeout: int = 600) -> Dict[str, Any]:
+def run_project_command_tail(project_path: Path, command: str, tail_lines: int = 50, timeout: int = 600, env: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """
     Runs a command and only keeps the last N lines of output to prevent memory/buffer overflow.
     """
     output_tail = deque(maxlen=tail_lines)
+    
+    # Merge with current environment if env is provided
+    run_env = os.environ.copy()
+    if env:
+        run_env.update(env)
     
     try:
         process = subprocess.Popen(
@@ -29,7 +34,8 @@ def run_project_command_tail(project_path: Path, command: str, tail_lines: int =
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            bufsize=1
+            bufsize=1,
+            env=run_env
         )
         
         while True:
@@ -101,9 +107,14 @@ def execute_in_parallel(
         return table
 
     def run_task(project: Project):
-        cmd = command_provider(project)
+        provider_res = command_provider(project)
+        if isinstance(provider_res, tuple):
+            cmd, task_env = provider_res
+        else:
+            cmd, task_env = provider_res, None
+
         task_cwd = cwd or project.path
-        res_data = run_project_command_tail(task_cwd, cmd, tail_lines=50)
+        res_data = run_project_command_tail(task_cwd, cmd, tail_lines=50, env=task_env)
         
         with results_lock:
             success = (res_data["returncode"] == 0)

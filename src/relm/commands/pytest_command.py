@@ -85,14 +85,31 @@ def execute(args: Namespace, console: Console):
     if getattr(args, "parallel", False):
         def cmd_provider(p):
             base_cmd = [sys.executable, "-m", "pytest"]
+            
+            # Create a unique directory for this project's coverage data.
+            # This ensures that 'pytest-cov' combine/report operations are perfectly isolated
+            # and won't attempt to access data from other projects.
+            cov_dir = root_path / ".relm_cov" / p.name
+            cov_dir.mkdir(parents=True, exist_ok=True)
+            cov_data_path = cov_dir / ".coverage"
+
             if use_from_root:
-                # Use relative path if possible for cleaner output
                 try:
                     target_path = str(p.path.relative_to(root_path))
                 except ValueError:
                     target_path = str(p.path)
-                return base_cmd + [target_path] + pytest_args
-            return base_cmd + pytest_args
+                cmd = base_cmd + [target_path]
+            else:
+                cmd = base_cmd
+            
+            cmd = cmd + pytest_args
+            
+            # Setting COVERAGE_FILE to an absolute path in a unique directory 
+            # provides the highest level of isolation for pytest-cov.
+            env = {
+                "COVERAGE_FILE": str(cov_data_path.resolve()),
+            }
+            return cmd, env
 
         results_data = execute_in_parallel(
             target_projects,
@@ -104,6 +121,13 @@ def execute(args: Namespace, console: Console):
         # Map back to simple results format for summary
         results = results_data
         
+        # Cleanup temporary coverage directories
+        import shutil
+        try:
+            shutil.rmtree(root_path / ".relm_cov", ignore_errors=True)
+        except Exception:
+            pass
+
         # In parallel mode, show output for failed projects since it was captured
         for res in results:
             if not res["success"]:
@@ -165,6 +189,15 @@ def execute(args: Namespace, console: Console):
     # Final Summary
     console.rule("Pytest Summary")
     
+    # Cleanup temporary coverage files
+    import shutil
+    relm_cov_dir = root_path / ".relm_cov"
+    if relm_cov_dir.exists():
+        try:
+            shutil.rmtree(relm_cov_dir)
+        except Exception:
+            pass
+
     table = Table(show_header=True, header_style="bold")
     table.add_column("Project", style="cyan")
     table.add_column("Status", justify="center")
