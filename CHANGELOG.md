@@ -1,5 +1,7 @@
 # Changelog
 
+## [6.0.0] - 2026-01-01
+
 ## [5.0.1] - 2025-12-28
 ### Other Changes
 - update

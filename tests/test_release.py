@@ -11,7 +11,7 @@ class TestRelease(unittest.TestCase):
     def setUp(self):
         self.project = Project(
             name="test-project",
-            version="5.0.1",
+            version="6.0.0",
             path=Path("/tmp/test_project"),
             description="Test project"
         )
@@ -89,7 +89,7 @@ class TestRelease(unittest.TestCase):
                                           mock_is_clean, mock_tag_exists, mock_fetch):
         mock_is_clean.return_value = True
         mock_tag_exists.side_effect = [True, False] # First check: already tagged? Yes (so bump). Second check: new tag exists? No.
-        mock_bump.return_value = "5.0.1"
+        mock_bump.return_value = "6.0.0"
         mock_update_file.return_value = True
         mock_update_tests.return_value = []
         mock_run_tests.return_value = True
@@ -97,7 +97,7 @@ class TestRelease(unittest.TestCase):
         result = perform_release(self.project, "patch", yes_mode=True)
         self.assertTrue(result)
 
-        mock_bump.assert_called_with("5.0.1", "patch")
+        mock_bump.assert_called_with("6.0.0", "patch")
         mock_commit.assert_called()
         mock_tag.assert_called()
         mock_push.assert_called()
@@ -132,7 +132,7 @@ class TestRelease(unittest.TestCase):
     def test_perform_release_tests_fail(self, mock_console, mock_revert, mock_run_tests, mock_update_file, mock_bump, mock_is_clean, mock_tag_exists, mock_fetch):
         mock_is_clean.return_value = True
         mock_tag_exists.return_value = True
-        mock_bump.return_value = "5.0.1"
+        mock_bump.return_value = "6.0.0"
         mock_update_file.return_value = True
         mock_run_tests.return_value = False
 
@@ -149,7 +149,7 @@ class TestRelease(unittest.TestCase):
     def test_perform_release_no_files_updated(self, mock_console, mock_update_file, mock_bump, mock_is_clean, mock_tag_exists, mock_fetch):
         mock_is_clean.return_value = True
         mock_tag_exists.return_value = True
-        mock_bump.return_value = "5.0.1"
+        mock_bump.return_value = "6.0.0"
         mock_update_file.return_value = False # No files updated
 
         result = perform_release(self.project, "patch", yes_mode=True)
@@ -190,7 +190,7 @@ class TestRelease(unittest.TestCase):
     def test_perform_release_cancel(self, mock_console, mock_confirm, mock_bump, mock_is_clean, mock_tag_exists, mock_fetch):
         mock_is_clean.return_value = True
         mock_tag_exists.return_value = True
-        mock_bump.return_value = "5.0.1"
+        mock_bump.return_value = "6.0.0"
         mock_confirm.return_value = False # Cancel
 
         result = perform_release(self.project, "patch", yes_mode=False)
@@ -209,7 +209,7 @@ class TestRelease(unittest.TestCase):
     def test_perform_release_commit_fail(self, mock_console, mock_commit, mock_add, mock_run_tests, mock_update_file, mock_bump, mock_is_clean, mock_tag_exists, mock_fetch):
         mock_is_clean.return_value = True
         mock_tag_exists.side_effect = [True, False]
-        mock_bump.return_value = "5.0.1"
+        mock_bump.return_value = "6.0.0"
         mock_update_file.return_value = True
         mock_run_tests.return_value = True
         mock_commit.side_effect = Exception("Commit failed")
@@ -231,7 +231,7 @@ class TestRelease(unittest.TestCase):
     def test_perform_release_tag_fail(self, mock_console, mock_tag, mock_commit, mock_add, mock_run_tests, mock_update_file, mock_bump, mock_is_clean, mock_tag_exists, mock_fetch):
         mock_is_clean.return_value = True
         mock_tag_exists.side_effect = [True, False]
-        mock_bump.return_value = "5.0.1"
+        mock_bump.return_value = "6.0.0"
         mock_update_file.return_value = True
         mock_run_tests.return_value = True
         mock_tag.side_effect = Exception("Tag failed")
@@ -254,7 +254,7 @@ class TestRelease(unittest.TestCase):
     def test_perform_release_push_fail(self, mock_console, mock_push, mock_tag, mock_commit, mock_add, mock_run_tests, mock_update_file, mock_bump, mock_is_clean, mock_tag_exists, mock_fetch):
         mock_is_clean.return_value = True
         mock_tag_exists.side_effect = [True, False]
-        mock_bump.return_value = "5.0.1"
+        mock_bump.return_value = "6.0.0"
         mock_update_file.return_value = True
         mock_run_tests.return_value = True
         mock_push.side_effect = Exception("Push failed")
@@ -281,7 +281,7 @@ class TestRelease(unittest.TestCase):
                                                   mock_is_clean, mock_tag_exists, mock_fetch, mock_path_exists):
         mock_is_clean.return_value = True
         mock_tag_exists.side_effect = [True, False]
-        mock_bump.return_value = "5.0.1"
+        mock_bump.return_value = "6.0.0"
         mock_update_file.return_value = True
         mock_update_tests.return_value = []
         mock_run_tests.return_value = True
@@ -293,7 +293,7 @@ class TestRelease(unittest.TestCase):
 
         # Check that update_file_content was called for the correct __init__.py path
         init_path = self.project.path / "test_project/__init__.py"
-        mock_update_file.assert_any_call(init_path, "5.0.1", "5.0.1")
+        mock_update_file.assert_any_call(init_path, "6.0.0", "6.0.0")
 
 
 if __name__ == "__main__":
