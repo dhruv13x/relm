@@ -1,6 +1,7 @@
 import argparse
 import sys
 import subprocess
+import time
 from argparse import Namespace, _SubParsersAction
 from pathlib import Path
 from rich.console import Console
@@ -156,6 +157,7 @@ def execute(args: Namespace, console: Console):
                     console.print(escape(res["stderr"]), style="red")
     else:
         results = []
+        start_time_all = time.time()
         for project in target_projects:
             console.rule(f"Testing {project.name}")
             
@@ -171,7 +173,9 @@ def execute(args: Namespace, console: Console):
             
             try:
                 from ..runner import run_project_command_tail
+                task_start = time.time()
                 res_data = run_project_command_tail(cwd or project.path, cmd, tail_lines=50)
+                task_duration = time.time() - task_start
                 success = (res_data["returncode"] == 0)
                 
                 if not success:
@@ -187,17 +191,23 @@ def execute(args: Namespace, console: Console):
                 console.print(f"[red]Error executing pytest in {project.name}: {e}[/red]")
                 success = False
                 res_data = {"stdout": str(e), "stderr": ""}
+                task_duration = 0
 
             results.append({
                 "name": project.name,
                 "success": success,
                 "path": project.path,
-                "stdout": res_data["stdout"]
+                "stdout": res_data["stdout"],
+                "duration": task_duration
             })
 
             if not success and args.fail_fast:
                 console.print(f"[red]Fail-fast enabled. Stopping further tests.[/red]")
                 break
+        
+        total_duration = time.time() - start_time_all
+        for res in results:
+            res["total_duration"] = total_duration
 
     # Final Summary
     console.rule("Pytest Summary")
@@ -214,14 +224,19 @@ def execute(args: Namespace, console: Console):
     table = Table(show_header=True, header_style="bold")
     table.add_column("Project", style="cyan")
     table.add_column("Status", justify="center")
+    table.add_column("Duration", justify="right")
     table.add_column("Path", style="dim")
 
     passed_count = 0
+    total_time = 0
     for res in results:
         status = "[green]PASSED[/green]" if res["success"] else "[red]FAILED[/red]"
         if res["success"]:
             passed_count += 1
-        table.add_row(res["name"], status, str(res["path"]))
+        
+        duration = res.get("duration", 0)
+        table.add_row(res["name"], status, f"{duration:.2f}s", str(res["path"]))
+        total_time = res.get("total_duration", 0)
 
     console.print(table)
 
@@ -229,7 +244,7 @@ def execute(args: Namespace, console: Console):
     run_count = len(results)
     failed_count = run_count - passed_count
 
-    summary_msg = f"[bold]Ran tests for {run_count}/{total} projects.[/bold] "
+    summary_msg = f"[bold]Ran tests for {run_count}/{total} projects in {total_time:.2f}s.[/bold] "
     summary_msg += f"[green]{passed_count} passed[/green], [red]{failed_count} failed[/red]."
     
     if run_count < total:

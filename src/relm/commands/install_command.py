@@ -1,8 +1,10 @@
 import argparse
 import sys
+import time
 from argparse import Namespace, _SubParsersAction
 from pathlib import Path
 from rich.console import Console
+from rich.table import Table
 from ..core import find_projects, sort_projects_by_dependency
 from ..install import install_project
 
@@ -86,23 +88,44 @@ def execute(args: Namespace, console: Console):
         
         for res in results_data:
             if res["success"]:
-                results["installed"].append(res["name"])
+                results["installed"].append({"name": res["name"], "duration": res.get("duration", 0)})
             else:
-                results["failed"].append(res["name"])
+                results["failed"].append({"name": res["name"], "duration": res.get("duration", 0)})
                 console.rule(f"[red]Output for FAILED project: {res['name']}[/red]")
                 from rich.markup import escape
                 if res["stdout"]: console.print(escape(res["stdout"]))
                 if res["stderr"]: console.print(escape(res["stderr"]), style="red")
     else:
+        start_time_all = time.time()
         for project in target_projects:
+            task_start = time.time()
             success = install_project(project, editable=editable_mode)
+            task_duration = time.time() - task_start
             if success:
-                results["installed"].append(project.name)
+                results["installed"].append({"name": project.name, "duration": task_duration})
             else:
-                results["failed"].append(project.name)
+                results["failed"].append({"name": project.name, "duration": task_duration})
+        total_duration = time.time() - start_time_all
 
     if args.project_name == "all":
         console.rule("Bulk Install Summary")
-        console.print(f"[green]Installed: {len(results['installed'])}[/green] {results['installed']}")
+        
+        table = Table(show_header=True, header_style="bold")
+        table.add_column("Project", style="cyan")
+        table.add_column("Status", justify="center")
+        table.add_column("Duration", justify="right")
+
+        for item in results["installed"]:
+            table.add_row(item["name"], "[green]Installed[/green]", f"{item['duration']:.2f}s")
+        for item in results["failed"]:
+            table.add_row(item["name"], "[red]Failed[/red]", f"{item['duration']:.2f}s")
+        
+        console.print(table)
+        
+        # We need total_duration. In parallel mode it's in results_data[0]['total_duration']
+        actual_total = total_duration if not getattr(args, "parallel", False) else results_data[0].get("total_duration", 0)
+
+        console.print(f"[bold]Completed bulk install in {actual_total:.2f}s.[/bold]")
+        console.print(f"[green]Installed: {len(results['installed'])}[/green]")
         if results["failed"]:
-            console.print(f"[red]Failed:    {len(results['failed'])}[/red] {results['failed']}")
+            console.print(f"[red]Failed:    {len(results['failed'])}[/red]")

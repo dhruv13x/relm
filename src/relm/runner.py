@@ -84,6 +84,7 @@ def execute_in_parallel(
     failed: Set[str] = set()
     results: List[Dict[str, Any]] = []
     results_lock = threading.Lock()
+    start_time_overall = time.time()
     
     if max_workers is None:
         max_workers = os.cpu_count() or 4
@@ -92,9 +93,17 @@ def execute_in_parallel(
         table = Table(title="Parallel Execution Status", box=None, expand=True)
         table.add_column("Project", style="cyan")
         table.add_column("Status", justify="center")
+        table.add_column("Duration", justify="right")
         
         with results_lock:
+            # Create a map for quick duration lookup
+            durations = {res["name"]: res.get("duration") for res in results}
+            
             for p in projects:
+                duration_str = ""
+                if p.name in durations and durations[p.name] is not None:
+                    duration_str = f"{durations[p.name]:.2f}s"
+                
                 if p.name in failed:
                     status = "[bold red]FAILED[/bold red]"
                 elif p.name in completed:
@@ -103,10 +112,11 @@ def execute_in_parallel(
                     status = "[bold yellow]RUNNING[/bold yellow]"
                 else:
                     status = "[dim]Pending[/dim]"
-                table.add_row(p.name, status)
+                table.add_row(p.name, status, duration_str)
         return table
 
     def run_task(project: Project):
+        task_start = time.time()
         provider_res = command_provider(project)
         if isinstance(provider_res, tuple):
             cmd, task_env = provider_res
@@ -115,6 +125,7 @@ def execute_in_parallel(
 
         task_cwd = cwd or project.path
         res_data = run_project_command_tail(task_cwd, cmd, tail_lines=50, env=task_env)
+        task_duration = time.time() - task_start
         
         with results_lock:
             success = (res_data["returncode"] == 0)
@@ -124,7 +135,8 @@ def execute_in_parallel(
                 "path": project.path,
                 "stdout": res_data["stdout"],
                 "stderr": res_data["stderr"],
-                "returncode": res_data["returncode"]
+                "returncode": res_data["returncode"],
+                "duration": task_duration
             })
             if success:
                 completed.add(project.name)
@@ -179,5 +191,9 @@ def execute_in_parallel(
                     time.sleep(0.1)
                     
         live.update(get_status_table())
+
+    total_duration = time.time() - start_time_overall
+    for res in results:
+        res["total_duration"] = total_duration
 
     return results

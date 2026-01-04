@@ -1,8 +1,10 @@
 import argparse
 import sys
+import time
 from argparse import Namespace, _SubParsersAction
 from pathlib import Path
 from rich.console import Console
+from rich.table import Table
 from ..core import find_projects, sort_projects_by_dependency
 from ..runner import run_project_command
 
@@ -67,6 +69,7 @@ def execute(args: Namespace, console: Console):
     results = {"success": [], "failed": []}
     use_from_root = getattr(args, "from_root", False)
     cwd = root_path if use_from_root else None
+    total_duration = 0
 
     if getattr(args, "parallel", False):
         from ..runner import execute_in_parallel
@@ -83,29 +86,49 @@ def execute(args: Namespace, console: Console):
         )
         
         for res in results_data:
+            item = {"name": res["name"], "duration": res.get("duration", 0)}
             if res["success"]:
-                results["success"].append(res["name"])
+                results["success"].append(item)
             else:
-                results["failed"].append(res["name"])
+                results["failed"].append(item)
                 console.rule(f"[red]Output for FAILED project: {res['name']}[/red]")
                 from rich.markup import escape
                 if res["stdout"]: console.print(escape(res["stdout"]))
                 if res["stderr"]: console.print(escape(res["stderr"]), style="red")
+        
+        if results_data:
+            total_duration = results_data[0].get("total_duration", 0)
     else:
+        start_time_all = time.time()
         for project in target_projects:
             console.rule(f"Running on {project.name}")
+            task_start = time.time()
             success = run_project_command(cwd or project.path, args.command_string)
+            task_duration = time.time() - task_start
+            item = {"name": project.name, "duration": task_duration}
             if success:
-                results["success"].append(project.name)
+                results["success"].append(item)
             else:
-                results["failed"].append(project.name)
+                results["failed"].append(item)
                 if args.fail_fast:
                     console.print(f"[red]Fail-fast enabled. Stopping execution.[/red]")
                     break
+        total_duration = time.time() - start_time_all
 
     console.rule("Execution Summary")
-    if results["success"]:
-        console.print(f"[green]Success: {len(results['success'])}[/green] {results['success']}")
+    
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Project", style="cyan")
+    table.add_column("Status", justify="center")
+    table.add_column("Duration", justify="right")
+
+    for item in results["success"]:
+        table.add_row(item["name"], "[green]Success[/green]", f"{item['duration']:.2f}s")
+    for item in results["failed"]:
+        table.add_row(item["name"], "[red]Failed[/red]", f"{item['duration']:.2f}s")
+    
+    console.print(table)
+    console.print(f"[bold]Total execution time: {total_duration:.2f}s[/bold]")
+
     if results["failed"]:
-        console.print(f"[red]Failed:  {len(results['failed'])}[/red] {results['failed']}")
         sys.exit(1)
