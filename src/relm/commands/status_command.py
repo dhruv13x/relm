@@ -19,22 +19,30 @@ def execute(args: Namespace, console: Console):
     all_projects = find_projects(
         root_path,
         recursive=getattr(args, "recursive", False),
-        max_depth=getattr(args, "depth", 2)
+        max_depth=getattr(args, "depth", 2),
+        include_root=getattr(args, "include_root", None)
     )
     target_projects = []
 
     if args.project_name == "all":
         target_projects = all_projects
     else:
-        # 1. Try path-based matching
-        target_dir = (root_path / args.project_name).resolve()
+        # 1. Try path-based matching (e.g. relm status packages/my-lib)
+        input_path = Path(args.project_name)
+        if not input_path.is_absolute():
+            target_dir = (root_path / input_path).resolve()
+        else:
+            target_dir = input_path.resolve()
+
         if target_dir.exists() and target_dir.is_dir():
+            # Filter all projects that are under this directory or IS this directory
             target_projects = [
                 p for p in all_projects 
                 if p.path.resolve() == target_dir or target_dir in p.path.resolve().parents
             ]
             if target_projects:
-                console.print(f"[bold]Targeting {len(target_projects)} projects in folder: [cyan]{args.project_name}[/cyan][/bold]")
+                if len(target_projects) > 1:
+                    console.print(f"[bold]Targeting {len(target_projects)} projects in: [cyan]{args.project_name}[/cyan][/bold]")
 
         # 2. Try exact name match
         if not target_projects:

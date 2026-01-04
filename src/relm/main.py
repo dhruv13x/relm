@@ -92,6 +92,18 @@ def main():
         action="store_true",
         help="Run commands from the current working directory instead of project directories."
     )
+    base_parser.add_argument(
+        "--no-from-root",
+        action="store_false",
+        dest="from_root",
+        help="Run commands from the project directories instead of the workspace root."
+    )
+    base_parser.add_argument(
+        "--include-root",
+        action="store_true",
+        default=False,
+        help="Include the project at the root path in the operation (even in recursive mode)."
+    )
 
     parser = argparse.ArgumentParser(
         description="Manage releases and versioning for local Python projects.",

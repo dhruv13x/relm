@@ -75,15 +75,21 @@ def load_project(path: Path) -> Optional[Project]:
     
     return None
 
-def find_projects(root_path: Path, recursive: bool = False, max_depth: int = 1) -> List[Project]:
+def find_projects(root_path: Path, recursive: bool = False, max_depth: int = 1, include_root: Optional[bool] = None) -> List[Project]:
     """
     Scans root_path for valid projects. 
     If recursive is False, only scans root and immediate subdirectories (depth 1).
     If recursive is True, scans up to max_depth.
+    
+    If include_root is None, it defaults to False if recursive is True, 
+    otherwise True.
     """
     projects = []
     if not root_path.exists() or not root_path.is_dir():
         return projects
+
+    if include_root is None:
+        include_root = not recursive
 
     IGNORE_DIRS = {
         "node_modules", "venv", ".venv", "env", ".env", "dist", "build", ".git",
@@ -114,6 +120,10 @@ def find_projects(root_path: Path, recursive: bool = False, max_depth: int = 1) 
             dirs[:] = []
         
         if "pyproject.toml" in files:
+            # Skip root project if requested
+            if current_path == root_path and not include_root:
+                continue
+
             project = load_project(current_path)
             if project:
                 projects.append(project)

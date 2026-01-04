@@ -21,7 +21,8 @@ def execute(args: Namespace, console: Console):
     all_projects = find_projects(
         root_path,
         recursive=getattr(args, "recursive", False),
-        max_depth=getattr(args, "depth", 2)
+        max_depth=getattr(args, "depth", 2),
+        include_root=getattr(args, "include_root", None)
     )
 
     target_projects = []

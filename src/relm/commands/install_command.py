@@ -19,7 +19,8 @@ def execute(args: Namespace, console: Console):
     all_projects = find_projects(
         root_path,
         recursive=getattr(args, "recursive", False),
-        max_depth=getattr(args, "depth", 2)
+        max_depth=getattr(args, "depth", 2),
+        include_root=getattr(args, "include_root", None)
     )
     target_projects = []
 
@@ -32,9 +33,15 @@ def execute(args: Namespace, console: Console):
             console.print(f"[red]Dependency sorting failed: {e}[/red]")
             sys.exit(1)
     else:
-        # 1. Try path-based matching
-        target_dir = (root_path / args.project_name).resolve()
+        # 1. Try path-based matching (e.g. relm install packages/my-lib)
+        input_path = Path(args.project_name)
+        if not input_path.is_absolute():
+            target_dir = (root_path / input_path).resolve()
+        else:
+            target_dir = input_path.resolve()
+
         if target_dir.exists() and target_dir.is_dir():
+            # Filter all projects that are under this directory or IS this directory
             target_projects = [
                 p for p in all_projects 
                 if p.path.resolve() == target_dir or target_dir in p.path.resolve().parents
@@ -45,9 +52,11 @@ def execute(args: Namespace, console: Console):
                 except ValueError as e:
                     console.print(f"[red]Dependency sorting failed: {e}[/red]")
                     sys.exit(1)
-                console.print(f"[bold]Targeting {len(target_projects)} projects in folder: [cyan]{args.project_name}[/cyan][/bold]")
-
-        # 2. Try exact name match
+                
+                if len(target_projects) > 1:
+                    console.print(f"[bold]Targeting {len(target_projects)} projects in: [cyan]{args.project_name}[/cyan][/bold]")
+        
+        # 2. If no projects found via path, try exact name match
         if not target_projects:
             target = next((p for p in all_projects if p.name == args.project_name), None)
             if not target:
@@ -71,7 +80,8 @@ def execute(args: Namespace, console: Console):
             target_projects,
             command_provider=cmd_provider,
             max_workers=args.jobs,
-            fail_fast=True # Always fail-fast for installation dependencies
+            fail_fast=True, # Always fail-fast for installation dependencies
+            cwd=None # CRITICAL: Always run pip install inside the project directory
         )
         
         for res in results_data:
@@ -79,9 +89,10 @@ def execute(args: Namespace, console: Console):
                 results["installed"].append(res["name"])
             else:
                 results["failed"].append(res["name"])
-                console.rule(f"[red]Install FAILED for: {res['name']}[/red]")
-                if res["stdout"]: console.print(res["stdout"])
-                if res["stderr"]: console.print(res["stderr"], style="red")
+                console.rule(f"[red]Output for FAILED project: {res['name']}[/red]")
+                from rich.markup import escape
+                if res["stdout"]: console.print(escape(res["stdout"]))
+                if res["stderr"]: console.print(escape(res["stderr"]), style="red")
     else:
         for project in target_projects:
             success = install_project(project, editable=editable_mode)

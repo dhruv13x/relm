@@ -22,8 +22,8 @@ def register(subparsers: _SubParsersAction, base_parser: argparse.ArgumentParser
         action="store_true", 
         help="Stop execution if a project's tests fail"
     )
-    # We handle pytest arguments manually via -- separator in execute()
-    pytest_parser.set_defaults(func=execute)
+    # We default from_root to True for pytest as it is the standard monorepo workflow
+    pytest_parser.set_defaults(func=execute, from_root=True)
 
 def execute(args: Namespace, console: Console):
     """Execute the pytest command."""
@@ -37,24 +37,31 @@ def execute(args: Namespace, console: Console):
     all_projects = find_projects(
         root_path,
         recursive=getattr(args, "recursive", False),
-        max_depth=getattr(args, "depth", 2)
+        max_depth=getattr(args, "depth", 2),
+        include_root=getattr(args, "include_root", None)
     )
     target_projects = []
 
     if args.project_name == "all":
         try:
             target_projects = sort_projects_by_dependency(all_projects)
-            # If running from root, skip the project that IS the root to avoid double execution
-            if getattr(args, "from_root", False):
+            # If running from root and we have multiple projects, skip the project that IS the root 
+            # to avoid double execution (since running pytest from root usually finds sub-tests anyway)
+            if getattr(args, "from_root", False) and len(target_projects) > 1:
                 target_projects = [p for p in target_projects if p.path.resolve() != root_path.resolve()]
         except ValueError as e:
             console.print(f"[red]Dependency sorting failed: {e}[/red]")
             sys.exit(1)
     else:
-        # 1. Try path-based matching (e.g. relm pytest packages)
-        target_dir = (root_path / args.project_name).resolve()
+        # 1. Try path-based matching (e.g. relm pytest packages/my-lib)
+        input_path = Path(args.project_name)
+        if not input_path.is_absolute():
+            target_dir = (root_path / input_path).resolve()
+        else:
+            target_dir = input_path.resolve()
+
         if target_dir.exists() and target_dir.is_dir():
-            # Filter all projects that are under this directory
+            # Filter all projects that are under this directory or IS this directory
             target_projects = [
                 p for p in all_projects 
                 if p.path.resolve() == target_dir or target_dir in p.path.resolve().parents
@@ -65,7 +72,10 @@ def execute(args: Namespace, console: Console):
                 except ValueError as e:
                     console.print(f"[red]Dependency sorting failed: {e}[/red]")
                     sys.exit(1)
-                console.print(f"[bold]Targeting {len(target_projects)} projects in folder: [cyan]{args.project_name}[/cyan][/bold]")
+                
+                # Only print targeting info if it's actually a multi-project folder or different from name
+                if len(target_projects) > 1:
+                    console.print(f"[bold]Targeting {len(target_projects)} projects in: [cyan]{args.project_name}[/cyan][/bold]")
         
         # 2. If no projects found via path, try exact name match
         if not target_projects:
@@ -134,14 +144,16 @@ def execute(args: Namespace, console: Console):
                 console.rule(f"[red]Summary for FAILED project: {res['name']}[/red]")
                 if res["stdout"]:
                     from rich.panel import Panel
+                    from rich.markup import escape
                     console.print(Panel(
-                        res["stdout"], 
+                        escape(res["stdout"]), 
                         title="Last 50 lines of output", 
                         subtitle="Truncated to prevent system crash",
                         border_style="red"
                     ))
                 if res["stderr"]:
-                    console.print(res["stderr"], style="red")
+                    from rich.markup import escape
+                    console.print(escape(res["stderr"]), style="red")
     else:
         results = []
         for project in target_projects:
@@ -164,8 +176,9 @@ def execute(args: Namespace, console: Console):
                 
                 if not success:
                     from rich.panel import Panel
+                    from rich.markup import escape
                     console.print(Panel(
-                        res_data["stdout"], 
+                        escape(res_data["stdout"]), 
                         title=f"Failure Summary: {project.name}", 
                         subtitle="Last 50 lines of output",
                         border_style="red"
