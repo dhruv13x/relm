@@ -68,5 +68,31 @@ version = "0.3.0"
         projects = find_projects(root)
         self.assertEqual(len(projects), 0)
 
+    def test_find_projects_smart_include_root(self):
+        """
+        Tests the 'smart' default logic for include_root.
+        - Non-recursive: should include root by default.
+        - Recursive: should exclude root by default.
+        """
+        self.fs.create_file("pyproject.toml", contents='''
+[project]
+name = "root-pkg"
+version = "1.0.0"
+''')
+        root = Path(".")
+        
+        # 1. Non-recursive should include root by default
+        projects = find_projects(root, recursive=False, include_root=None)
+        self.assertEqual(len(projects), 1)
+        self.assertEqual(projects[0].name, "root-pkg")
+        
+        # 2. Recursive should EXCLUDE root by default
+        projects = find_projects(root, recursive=True, include_root=None)
+        self.assertEqual(len(projects), 0)
+        
+        # 3. Explicit include_root=True should work in both
+        projects = find_projects(root, recursive=True, include_root=True)
+        self.assertEqual(len(projects), 1)
+
 if __name__ == "__main__":
     unittest.main()

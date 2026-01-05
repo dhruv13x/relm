@@ -101,7 +101,7 @@ def main():
     base_parser.add_argument(
         "--include-root",
         action="store_true",
-        default=False,
+        default=None,
         help="Include the project at the root path in the operation (even in recursive mode)."
     )
 
