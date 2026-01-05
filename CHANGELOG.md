@@ -1,5 +1,9 @@
 # Changelog
 
+## [7.1.0] - 2026-01-05
+### Features
+- implement smart root project discovery defaults
+
 ## [7.0.0] - 2026-01-05
 ### Bug Fixes
 - resolve parallel coverage race condition and update branding
