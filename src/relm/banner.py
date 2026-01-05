@@ -183,4 +183,4 @@ def print_logo():
 
         console.print(tline)
 
-    console.print("[dim]📦 A release lifecycle manager for local Python projects.[/dim]\\n")
+    console.print("[dim]📦 The Monorepo Manager for Python. Orchestrating workspaces with ease.[/dim]\\n")

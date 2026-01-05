@@ -94,14 +94,15 @@ def execute(args: Namespace, console: Console):
     cwd = root_path if use_from_root else None
 
     if getattr(args, "parallel", False):
+        temp_dirs = []
         def cmd_provider(p):
             base_cmd = [sys.executable, "-m", "pytest"]
             
             # Create a unique directory for this project's coverage data.
-            # This ensures that 'pytest-cov' combine/report operations are perfectly isolated
-            # and won't attempt to access data from other projects.
-            cov_dir = root_path / ".relm_cov" / p.name
-            cov_dir.mkdir(parents=True, exist_ok=True)
+            # Using a unique suffix prevents any SQLite lock contention or race conditions.
+            import tempfile
+            cov_dir = Path(tempfile.mkdtemp(prefix=f"relm_cov_{p.name}_", dir=root_path))
+            temp_dirs.append(cov_dir)
             cov_data_path = cov_dir / ".coverage"
 
             if use_from_root:
@@ -132,10 +133,20 @@ def execute(args: Namespace, console: Console):
         # Map back to simple results format for summary
         results = results_data
         
+        # Short sleep to allow SQLite/Filesystem to flush all handles
+        time.sleep(0.5)
+
         # Cleanup temporary coverage directories
         import shutil
+        for d in temp_dirs:
+            try:
+                shutil.rmtree(d, ignore_errors=True)
+            except Exception:
+                pass
         try:
-            shutil.rmtree(root_path / ".relm_cov", ignore_errors=True)
+            # Also try to clean up the parent dir if empty
+            if (root_path / ".relm_cov").exists():
+                shutil.rmtree(root_path / ".relm_cov", ignore_errors=True)
         except Exception:
             pass
 

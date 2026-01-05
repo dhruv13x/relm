@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "relm"
 version = "6.1.0"
-description = "A unified CLI tool to manage versioning, git, and PyPI releases for multiple projects."
+description = "The Monorepo Manager for Python. A unified CLI for managing, testing, and releasing multi-project workspaces."
 readme = "README.md"
 requires-python = ">=3.8"
 

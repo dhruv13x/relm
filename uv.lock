@@ -1862,7 +1862,7 @@ wheels = [
 
 [[package]]
 name = "relm"
-version = "5.0.1"
+version = "6.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "build", version = "1.2.2.post1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
