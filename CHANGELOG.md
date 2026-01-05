@@ -1,5 +1,9 @@
 # Changelog
 
+## [7.0.0] - 2026-01-05
+### Bug Fixes
+- resolve parallel coverage race condition and update branding
+
 ## [6.0.0] - 2026-01-01
 
 ## [5.0.1] - 2025-12-28
