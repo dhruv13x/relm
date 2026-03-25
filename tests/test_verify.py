@@ -3,8 +3,8 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
-import subprocess
 import json
+import urllib.error
 from relm.verify import verify_project_release
 from relm.core import Project
 
@@ -18,15 +18,18 @@ class TestVerify(unittest.TestCase):
         )
 
     @patch("relm.verify.git_tag_exists")
-    @patch("subprocess.run")
-    def test_verify_success(self, mock_run, mock_tag_exists):
+    @patch("urllib.request.urlopen")
+    def test_verify_success(self, mock_urlopen, mock_tag_exists):
         mock_tag_exists.return_value = True
         
-        # Mock pip output
-        mock_run.return_value = MagicMock(
-            stdout=json.dumps({"name": "test-project", "versions": [self.project.version, "0.9.0"]}),
-            returncode=0
-        )
+        # Mock PyPI response
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "releases": {self.project.version: [], "0.9.0": []},
+            "info": {"version": self.project.version}
+        }).encode()
+        mock_response.__enter__.return_value = mock_response
+        mock_urlopen.return_value = mock_response
         
         success, message = verify_project_release(self.project)
         self.assertTrue(success)
@@ -41,14 +44,18 @@ class TestVerify(unittest.TestCase):
         self.assertIn(f"Local git tag 'v{self.project.version}' does not exist", message)
 
     @patch("relm.verify.git_tag_exists")
-    @patch("subprocess.run")
-    def test_verify_version_not_found(self, mock_run, mock_tag_exists):
+    @patch("urllib.request.urlopen")
+    def test_verify_version_not_found(self, mock_urlopen, mock_tag_exists):
         mock_tag_exists.return_value = True
         
-        mock_run.return_value = MagicMock(
-            stdout=json.dumps({"name": "test-project", "versions": ["0.9.0"], "latest": "0.9.0"}),
-            returncode=0
-        )
+        # Mock PyPI response
+        mock_response = MagicMock()
+        mock_response.read.return_value = json.dumps({
+            "releases": {"0.9.0": []},
+            "info": {"version": "0.9.0"}
+        }).encode()
+        mock_response.__enter__.return_value = mock_response
+        mock_urlopen.return_value = mock_response
         
         success, message = verify_project_release(self.project)
         self.assertFalse(success)
@@ -56,29 +63,32 @@ class TestVerify(unittest.TestCase):
         self.assertIn("Latest is 0.9.0", message)
 
     @patch("relm.verify.git_tag_exists")
-    @patch("subprocess.run")
-    def test_verify_pip_error(self, mock_run, mock_tag_exists):
+    @patch("urllib.request.urlopen")
+    def test_verify_404_error(self, mock_urlopen, mock_tag_exists):
         mock_tag_exists.return_value = True
         
-        mock_run.side_effect = subprocess.CalledProcessError(1, "pip")
+        # Mock PyPI 404
+        mock_urlopen.side_effect = urllib.error.HTTPError(
+            "url", 404, "Not Found", {}, None
+        )
         
         success, message = verify_project_release(self.project)
         self.assertFalse(success)
         self.assertIn("Failed to query PyPI", message)
 
     @patch("relm.verify.git_tag_exists")
-    @patch("subprocess.run")
-    def test_verify_json_error(self, mock_run, mock_tag_exists):
+    @patch("urllib.request.urlopen")
+    def test_verify_json_error(self, mock_urlopen, mock_tag_exists):
         mock_tag_exists.return_value = True
         
-        mock_run.return_value = MagicMock(
-            stdout="Not JSON",
-            returncode=0
-        )
+        mock_response = MagicMock()
+        mock_response.read.return_value = b"Not JSON"
+        mock_response.__enter__.return_value = mock_response
+        mock_urlopen.return_value = mock_response
         
         success, message = verify_project_release(self.project)
         self.assertFalse(success)
-        self.assertIn("Failed to parse pip output", message)
+        self.assertIn("Failed to parse PyPI response", message)
 
 if __name__ == "__main__":
     unittest.main()
