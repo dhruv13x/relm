@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from rich.console import Console
 
+from . import __version__
 from .banner import print_logo
 from .config import load_config
 from .commands import (
@@ -108,6 +109,11 @@ def main():
     parser = argparse.ArgumentParser(
         description="Manage releases and versioning for local Python projects.",
         parents=[base_parser]
+    )
+    parser.add_argument(
+        "--version", "-v",
+        action="version",
+        version=f"relm {__version__}"
     )
     
     subparsers = parser.add_subparsers(dest="command", required=True)

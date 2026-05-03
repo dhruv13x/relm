@@ -78,3 +78,28 @@ def test_pytest_command_parallel(mock_console, mock_projects):
         
         mock_parallel.assert_called_once()
         assert mock_parallel.call_args.kwargs['max_workers'] == 4
+
+def test_pytest_command_parallel_cleanup(mock_console, mock_projects):
+    import tempfile
+    import shutil
+    test_dir = Path(tempfile.mkdtemp())
+    try:
+        p1 = Project(name="pkg-a", version="0.1.0", path=test_dir / "pkg-a", dependencies=[])
+        p1.path.mkdir()
+        (p1.path / "pyproject.toml").touch()
+
+        args = Namespace(path=str(test_dir), project_name="all", fail_fast=False, parallel=True, jobs=1, recursive=True, from_root=True)
+
+        with patch("relm.commands.pytest_command.find_projects", return_value=[p1]) \
+             , patch("relm.commands.pytest_command.sort_projects_by_dependency", return_value=[p1]) \
+             , patch("sys.argv", ["relm", "pytest", "--parallel"]) \
+             , patch("relm.commands.pytest_command.execute_in_parallel") as mock_parallel:
+
+            mock_parallel.return_value = [{"name": "pkg-a", "success": True, "path": p1.path, "stdout": "", "stderr": ""}]
+
+            execute(args, mock_console)
+
+            relm_cov = test_dir / ".relm_cov"
+            assert not relm_cov.exists()
+    finally:
+        shutil.rmtree(test_dir)

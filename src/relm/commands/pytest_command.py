@@ -94,6 +94,10 @@ def execute(args: Namespace, console: Console):
     cwd = root_path if use_from_root else None
 
     if getattr(args, "parallel", False):
+        # Create a hidden directory for all coverage data
+        relm_cov_base = root_path / ".relm_cov"
+        relm_cov_base.mkdir(exist_ok=True)
+        
         temp_dirs = []
         def cmd_provider(p):
             base_cmd = [sys.executable, "-m", "pytest"]
@@ -101,7 +105,7 @@ def execute(args: Namespace, console: Console):
             # Create a unique directory for this project's coverage data.
             # Using a unique suffix prevents any SQLite lock contention or race conditions.
             import tempfile
-            cov_dir = Path(tempfile.mkdtemp(prefix=f"relm_cov_{p.name}_", dir=root_path))
+            cov_dir = Path(tempfile.mkdtemp(prefix=f"relm_cov_{p.name}_", dir=relm_cov_base))
             temp_dirs.append(cov_dir)
             cov_data_path = cov_dir / ".coverage"
 
@@ -123,32 +127,36 @@ def execute(args: Namespace, console: Console):
             }
             return cmd, env
 
-        results_data = execute_in_parallel(
-            target_projects,
-            command_provider=cmd_provider,
-            max_workers=args.jobs,
-            fail_fast=args.fail_fast,
-            cwd=cwd
-        )
-        # Map back to simple results format for summary
-        results = results_data
-        
-        # Short sleep to allow SQLite/Filesystem to flush all handles
-        time.sleep(0.5)
+        try:
+            results_data = execute_in_parallel(
+                target_projects,
+                command_provider=cmd_provider,
+                max_workers=args.jobs,
+                fail_fast=args.fail_fast,
+                cwd=cwd
+            )
+            # Map back to simple results format for summary
+            results = results_data
+        finally:
+            # Short sleep to allow SQLite/Filesystem to flush all handles
+            time.sleep(0.5)
 
-        # Cleanup temporary coverage directories
-        import shutil
-        for d in temp_dirs:
+            # Cleanup temporary coverage directories
+            import shutil
+            for d in temp_dirs:
+                try:
+                    if d.exists():
+                        shutil.rmtree(d, ignore_errors=True)
+                except Exception:
+                    pass
             try:
-                shutil.rmtree(d, ignore_errors=True)
+                # Also try to clean up the parent dir if empty
+                if relm_cov_base.exists():
+                    # Only remove if it's empty to avoid removing user data if they happened to use this dir
+                    if not any(relm_cov_base.iterdir()):
+                        shutil.rmtree(relm_cov_base, ignore_errors=True)
             except Exception:
                 pass
-        try:
-            # Also try to clean up the parent dir if empty
-            if (root_path / ".relm_cov").exists():
-                shutil.rmtree(root_path / ".relm_cov", ignore_errors=True)
-        except Exception:
-            pass
 
         # In parallel mode, show output for failed projects since it was captured
         for res in results:

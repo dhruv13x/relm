@@ -458,5 +458,14 @@ class TestMain(unittest.TestCase):
         root_path = Path(".").resolve()
         mock_console.print.assert_any_call(f"[red]Project or folder 'nonexistent' not found in {root_path}[/red]")
 
+    def test_version_flag(self):
+        with patch("sys.stdout"), patch("sys.exit") as mock_exit, \
+             patch("sys.argv", ["relm", "--version"]):
+            try:
+                main()
+            except SystemExit:
+                pass
+            mock_exit.assert_called()
+
 if __name__ == "__main__":
     unittest.main()

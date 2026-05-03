@@ -50,3 +50,16 @@ class TestClean(TestCase):
         # Assert
         self.assertEqual(len(removed_paths), 0)
         self.assertTrue((project_path / "src" / "myproj" / "main.py").exists())
+
+    def test_clean_coverage_artifacts(self):
+        project_path = Path("/projects/myproj")
+        self.fs.create_file(project_path / ".coverage")
+        self.fs.create_dir(project_path / ".relm_cov")
+        self.fs.create_dir(project_path / "relm_cov_legacy")
+        
+        project = Project("myproj", "1.0.0", project_path, "description")
+        clean_project(project)
+        
+        self.assertFalse((project_path / ".coverage").exists())
+        self.assertFalse((project_path / ".relm_cov").exists())
+        self.assertFalse((project_path / "relm_cov_legacy").exists())
