@@ -1,5 +1,7 @@
 # Changelog
 
+## [8.0.0] - 2026-05-03
+
 ## [7.1.1] - 2026-03-26
 ### Bug Fixes
 - replace experimental pip index with PyPI JSON API in verify command
