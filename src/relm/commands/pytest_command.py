@@ -23,8 +23,7 @@ def register(subparsers: _SubParsersAction, base_parser: argparse.ArgumentParser
         action="store_true", 
         help="Stop execution if a project's tests fail"
     )
-    # We default from_root to True for pytest as it is the standard monorepo workflow
-    pytest_parser.set_defaults(func=execute, from_root=True)
+    pytest_parser.set_defaults(func=execute)
 
 def execute(args: Namespace, console: Console):
     """Execute the pytest command."""
@@ -90,7 +89,10 @@ def execute(args: Namespace, console: Console):
     if pytest_args:
         console.print(f"[dim]Pytest arguments: {' '.join(pytest_args)}[/dim]")
 
+    # For pytest, we default from_root to True unless --no-from-root is explicitly passed
     use_from_root = getattr(args, "from_root", False)
+    if "--no-from-root" not in sys.argv and "--from-root" not in sys.argv:
+        use_from_root = True
     cwd = root_path if use_from_root else None
 
     if getattr(args, "parallel", False):

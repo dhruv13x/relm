@@ -97,6 +97,7 @@ def main():
         "--no-from-root",
         action="store_false",
         dest="from_root",
+        default=False,
         help="Run commands from the project directories instead of the workspace root."
     )
     base_parser.add_argument(
@@ -116,7 +117,7 @@ def main():
         version=f"relm {__version__}"
     )
     
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command")
     
     # We pass the base_parser to commands if they need to inherit it
     # or just use it in the registration process.
