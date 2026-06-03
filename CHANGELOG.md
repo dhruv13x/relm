@@ -1,5 +1,9 @@
 # Changelog
 
+## [10.0.0] - 2026-06-03
+### Bug Fixes
+- remove incorrect root and parent __init__.py files causing test import errors in CI
+
 ## [9.0.0] - 2026-06-03
 
 ## [8.0.0] - 2026-05-03
